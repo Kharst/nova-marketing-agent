@@ -152,7 +152,7 @@ def validate(p, corpus, stand):
         errs.append("contains a banned word, claim or price")
     if not stand and re.search(r"\bstand\b", text, re.I):
         errs.append("no stand number was provided; do not mention a stand")
-    pages = p["linkedin"] + " " + p["facebook"]
+    pages = " ".join([p["linkedin"], p["facebook"], p["headline"], p["subline"]])
     if re.search(r"\bI(['\u2019](m|ve|d|ll))?\b", pages) or re.search(r"\b(me|my|myself|mine)\b", pages, re.I):
         errs.append("company page voice: never write in the first person (no I, me, my); use we, our or Nova Metrics")
     if len(re.findall(r"#\w+", p["linkedin"])) > 3:
@@ -235,13 +235,16 @@ def generate():
 
     mentions_event = bool(re.search(r"cape town|solar & storage", p["linkedin"] + p["facebook"], re.I))
     tag = evs[0]["tag"] if (evs and mentions_event) else "NOVA METRICS · SOLAR INTELLIGENCE"
-    name = f"{TODAY.isoformat()}.png"
+    stamp = dt.datetime.now(SAST).strftime("%H%M%S")
+    post_id = f"{TODAY.isoformat()}-{stamp}"
+    name = f"{post_id}.png"
     (OUT / "images").mkdir(parents=True, exist_ok=True)
     render(p, OUT / "images" / name, tag)
     branch = env("GITHUB_REF_NAME", "main")
     repo = env("GITHUB_REPOSITORY", "OWNER/REPO")
     p["image_url"] = f"https://raw.githubusercontent.com/{repo}/{branch}/out/images/{name}"
     p["date"] = TODAY.isoformat()
+    p["post_id"] = post_id
     PENDING.write_text(json.dumps(p, indent=2, ensure_ascii=False))
     log("Generated:", p["topic"])
 
@@ -251,7 +254,9 @@ def publish():
         log("Nothing pending.")
         return
     p = json.loads(PENDING.read_text())
-    payload = dict(p, mode=env("MODE", "review"))
+    # Make keys its stored post and Approve link on "date", so send the unique id there
+    payload = dict(p, date=p.get("post_id", p["date"]), mode=env("MODE", "review"))
+    payload.pop("post_id", None)
     r = requests.post(env("MAKE_WEBHOOK_URL"), json=payload, timeout=60)
     r.raise_for_status()
     hist = load_history()
