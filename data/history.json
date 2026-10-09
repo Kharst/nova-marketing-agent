@@ -68,5 +68,12 @@
     "topic": "Why I built Solar Intelligence for installers",
     "opening": "Running a solar business shouldn't feel like a full‑time admin job.",
     "mode": "review"
+  },
+  {
+    "date": "2026-10-09",
+    "type": "educator",
+    "topic": "Managing hardware changes without delay",
+    "opening": "Hardware changes after a proposal often pause the install timeline.",
+    "mode": "review"
   }
 ]
