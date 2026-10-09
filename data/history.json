@@ -75,5 +75,12 @@
     "topic": "Managing hardware changes without delay",
     "opening": "Hardware changes after a proposal often pause the install timeline.",
     "mode": "review"
+  },
+  {
+    "date": "2026-10-09",
+    "type": "industry_observer",
+    "topic": "Eskom fee waiver reshapes installer workflow",
+    "opening": "With Eskom removing registration fees, the rush to install is real – and the paperwork fol",
+    "mode": "review"
   }
 ]
