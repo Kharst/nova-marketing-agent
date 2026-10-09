@@ -152,6 +152,9 @@ def validate(p, corpus, stand):
         errs.append("contains a banned word, claim or price")
     if not stand and re.search(r"\bstand\b", text, re.I):
         errs.append("no stand number was provided; do not mention a stand")
+    pages = p["linkedin"] + " " + p["facebook"]
+    if re.search(r"\bI(['\u2019](m|ve|d|ll))?\b", pages) or re.search(r"\b(me|my|myself|mine)\b", pages, re.I):
+        errs.append("company page voice: never write in the first person (no I, me, my); use we, our or Nova Metrics")
     if len(re.findall(r"#\w+", p["linkedin"])) > 3:
         errs.append("max 3 hashtags")
     for n in re.findall(r"\d[\d,.]*\d|\d", text):
