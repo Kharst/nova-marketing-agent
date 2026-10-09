@@ -37,7 +37,7 @@ Cost check: about 3 to 4 credits per post, roughly 60 a month, against 1,000 fre
 
 ### 4. Settings (2 min)
 Repo, Settings, Secrets and variables, Actions, Variables tab:
-- `STAND_NO` = your stand number (leave empty and the agent will not mention a stand)
+- `STAND_NO` = SP14
 - `MODE` = `review`
 
 ### 5. First run
