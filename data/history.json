@@ -19,5 +19,12 @@
     "topic": "Instant compliant proposals with real pricing",
     "opening": "Turn a client enquiry into a signed proposal in minutes.",
     "mode": "review"
+  },
+  {
+    "date": "2026-10-09",
+    "type": "conversation_starter",
+    "topic": "Daily bottlenecks in solar install schedules",
+    "opening": "What’s the biggest bottleneck in your install schedule?",
+    "mode": "review"
   }
 ]
