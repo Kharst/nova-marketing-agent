@@ -201,7 +201,7 @@ def generate():
     force = env("FORCE") == "true"
     if hist and not force:
         last = dt.date.fromisoformat(hist[-1]["date"])
-        if (TODAY - last).days < int(env("MIN_DAYS", "2")):
+        if (TODAY - last).days < int(env("MIN_DAYS", "1")):
             log("Posted recently; nothing to do today.")
             return
     brand = (AGENT / "brand.md").read_text()
