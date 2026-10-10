@@ -89,5 +89,12 @@
     "topic": "Secure client approval for hardware changes",
     "opening": "Never let a hardware swap stall your install.",
     "mode": "review"
+  },
+  {
+    "date": "2026-10-10",
+    "type": "conversation_starter",
+    "topic": "Handling last‑minute hardware swaps",
+    "opening": "Unexpected hardware changes can stall an install. When a panel or inverter model is unavai",
+    "mode": "review"
   }
 ]
