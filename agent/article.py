@@ -15,6 +15,7 @@ import os
 import pathlib
 import re
 import sys
+import time
 import xml.etree.ElementTree as ET
 
 import requests
@@ -84,7 +85,9 @@ Article rules:
   sources, leave it out. Use only numbers that appear in the sources.
 - Never mention the partner programme, partner portal, partners, commissions or internal documents.
   Address the reader directly as an installer.
-- title: at most 65 characters, with the main search phrase used naturally.
+- title: at most 65 characters INCLUDING spaces (count them), with the main search phrase used naturally.
+- Do not add ANY number that is not written in the source material: no estimates, averages, percentages
+  or counts of your own. If you are not sure a number is in the sources, write the sentence without it.
 - slug: lowercase words joined by hyphens, at most 60 characters.
 - meta_description: 120 to 158 characters. excerpt: at most 180 characters.
 - faq: exactly 3 questions an installer might type into Google, each answer 1 to 3 sentences, taken from
@@ -179,6 +182,35 @@ def site_put(path, data, message):
     r.raise_for_status()
 
 
+# ------------------------------------------------------------ model calls
+PAUSE = int(env("ARTICLE_PAUSE", "40"))     # seconds to rest between rewrites (free tier limit per minute)
+WAIT_BUDGET = int(env("ARTICLE_WAIT_BUDGET", "420"))
+_waited = 0
+
+
+def ask(msgs):
+    """Call the model; if the free tier says 'too many requests', wait and try again."""
+    global _waited
+    for attempt in range(8):
+        try:
+            return base.llm(msgs)
+        except requests.HTTPError as e:
+            r = e.response
+            code = r.status_code if r is not None else 0
+            if code not in (429, 500, 502, 503, 504) or attempt == 7:
+                raise
+            try:
+                wait = float(r.headers.get("retry-after")) + 3
+            except Exception:
+                wait = 25 * (attempt + 1)
+            wait = min(wait, 90)
+            if _waited + wait > WAIT_BUDGET:
+                raise
+            _waited += wait
+            log(f"model busy (HTTP {code}); waiting {wait:.0f}s before trying again")
+            time.sleep(wait)
+
+
 # ---------------------------------------------------------------- validate
 def all_text(a):
     parts = [a.get("title", ""), a.get("meta_description", ""), a.get("excerpt", ""),
@@ -254,8 +286,8 @@ def validate(a, corpus, stand, used_slugs):
         errs.append("company voice: never use I, me or my; write as we, our or Nova Metrics")
     if not stand and re.search(r"\bstand\b", text, re.I):
         errs.append("do not mention a stand")
-    if len(re.findall(r"Solar Intelligence", text)) > 4:
-        errs.append("mention Solar Intelligence at most twice in the body")
+    if len(re.findall(r"Solar Intelligence", text)) > 3:
+        errs.append("you mention Solar Intelligence too often; use it at most twice in the body and once in the closing")
     for n in re.findall(r"\d[\d,.]*\d|\d", text):
         plain = n.replace(",", "")
         if plain.isdigit() and int(plain) <= 31:
@@ -523,11 +555,12 @@ def generate():
             {"role": "user", "content": json.dumps(ctx, ensure_ascii=False)}]
     a, errs = None, []
     for _ in range(5):
-        a = base.llm(msgs)
+        a = ask(msgs)
         errs = validate(a, corpus, stand, used)
         if not errs:
             break
         log("rejected:", errs)
+        time.sleep(PAUSE)
         msgs += [{"role": "assistant", "content": json.dumps(a)},
                  {"role": "user", "content": "Rejected: " + "; ".join(errs)
                   + ". Rewrite and return the full JSON again."}]
