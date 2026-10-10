@@ -21,6 +21,7 @@ import xml.etree.ElementTree as ET
 import requests
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import editor  # noqa: E402
 import run as base  # noqa: E402  (shared helpers: env, log, llm, events, gather)
 
 ROOT = base.ROOT
@@ -94,6 +95,13 @@ Article rules:
   the article or sources. Word the questions without "I", "my" or "me" (for example "What DC/AC ratio
   should installers aim for?").
 - closing: one or two sentences inviting the reader to see how Solar Intelligence handles this.
+- You are given verified_facts. Never state what a law, regulator or standard requires, defines or allows,
+  and never write "compliant with" or "aligned to" a standard, unless that exact statement is listed in
+  verified_facts. Text in source_material about what a standard says is NOT verified. Describe what
+  Solar Intelligence checks or flags instead (for example "Solar Intelligence flags a ratio outside
+  1.0 to 1.5" rather than "the standard requires 1.0 to 1.5").
+- If an editor note later asks you to fix a claim and you are sure it is right, keep it and add a key
+  "pushback": [{"claim": "...", "reason": "...", "quote": "exact words from the source material"}].
 - review_notes: up to 6 short strings. Each names a figure, standard or regulatory statement in the
   article that a human should verify against the source.
 
@@ -586,7 +594,7 @@ def pick_topic(items):
 
 def build_context(topic, items):
     recent_social = [h["topic"] for h in base.load_history()[-12:]]
-    ctx = {"today": TODAY.isoformat(),
+    ctx = {"today": TODAY.isoformat(), "verified_facts": editor.ledger_lines(),
            "already_written_articles": [{"title": i["title"], "slug": i["slug"]} for i in items]}
     texts = []
     if topic:
@@ -606,12 +614,20 @@ def build_context(topic, items):
     return ctx, " ".join(texts)
 
 
-def pr_body(a, topic_label, wc):
+def pr_body(a, topic_label, wc, open_claims=None, claims=None, pushback=None, note=""):
     lines = [f"## {a['title']}", "",
              f"*Topic:* {topic_label}  \n*Length:* about {wc} words  \n*Will appear at:* "
              f"`{site_url()}/articles/{a['slug']}`", "",
              "**To publish: press Merge pull request. To skip: close it.** Nothing goes on the website "
              "until you merge.", ""]
+    if open_claims or note:
+        lines[2:2] = ["> **NEEDS YOUR DECISION.** The writer and the editor could not settle the points "
+                      "below. Do not merge until you have checked them.", "",
+                      (note + "\n" if note else "") + editor.dispute_markdown(open_claims or [], pushback), ""]
+    elif claims:
+        checked = [c for c in claims if c["status"] in editor.OK]
+        lines += ["**Editor check passed.** " + f"{len(checked)} claims checked and backed by the verified "
+                  "list, the product facts or an official source.", ""]
     if a["review_notes"]:
         lines += ["### Please double-check these points", ""] + [f"- {n}" for n in a["review_notes"]] + [""]
     lines += ["---", "", f"> {a['meta_description']}", "", a["intro"], ""]
@@ -639,18 +655,38 @@ def generate():
     msgs = first
     problems = []
     a, errs = None, []
-    for _ in range(5):
+    reviews, open_claims, last_claims, note = 0, [], [], ""
+    corpus += json.dumps(editor.ledger_lines())
+    for _ in range(8):
         a = ask(msgs)
         errs = validate(a, corpus, stand, used)
+        text = "\n".join(all_text(a)) if not errs else ""
         if not errs:
-            break
-        log("rejected:", errs)
+            errs = editor.never_hits(text)
+        if errs:
+            log("rejected:", errs)
+            time.sleep(PAUSE)
+            # Keep requests small: send the list of problems, not the whole failed draft.
+            problems = (problems + errs)[-8:]
+            msgs = first + [{"role": "user", "content":
+                             "Your previous draft was rejected for these reasons: " + "; ".join(problems)
+                             + ". Write a new article that avoids every one of them. Return the full JSON."}]
+            continue
+        reviews += 1
         time.sleep(PAUSE)
-        # Keep requests small: send the list of problems, not the whole failed draft.
-        problems = (problems + errs)[-8:]
-        msgs = first + [{"role": "user", "content":
-                         "Your previous draft was rejected for these reasons: " + "; ".join(problems)
-                         + ". Write a new article that avoids every one of them. Return the full JSON."}]
+        rev = editor.review(text, source_text, a.get("pushback"), kind="article")
+        if rev["unavailable"]:
+            note = "The editor could not be reached, so the claims in this article were NOT checked."
+            open_claims = []
+            break
+        last_claims, open_claims = rev["claims"], rev["open"]
+        if rev["ok"]:
+            break
+        log("editor open claims:", [c["text"] for c in open_claims])
+        if reviews >= 3:
+            break
+        msgs = first + [{"role": "user", "content": editor.feedback(open_claims)
+                         + (" Also avoid: " + "; ".join(problems) if problems else "")}]
     else:
         sys.exit("The agent could not produce a compliant article this week: " + "; ".join(errs))
 
@@ -662,8 +698,10 @@ def generate():
     save_articles(items)
     OUT.mkdir(exist_ok=True)
     wc = word_count(a)
-    (OUT / "pr-body.md").write_text(pr_body(a, topic["angle"] if topic else "fresh angle", wc))
-    (OUT / "article-meta.json").write_text(json.dumps({"slug": a["slug"], "title": a["title"]}))
+    (OUT / "pr-body.md").write_text(pr_body(a, topic["angle"] if topic else "fresh angle", wc,
+                                            open_claims, last_claims, a.get("pushback"), note))
+    flag = " (needs your decision)" if (open_claims or note) else ""
+    (OUT / "article-meta.json").write_text(json.dumps({"slug": a["slug"], "title": a["title"] + flag}))
     log("Article written:", a["title"], f"({wc} words)")
 
 
