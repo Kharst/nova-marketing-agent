@@ -11,9 +11,12 @@ import os
 import pathlib
 import re
 import sys
+import time
 import xml.etree.ElementTree as ET
 
 import requests
+
+import editor
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 AGENT = ROOT / "agent"
@@ -33,7 +36,10 @@ Return ONLY a JSON object with exactly these keys:
 {"type": "<one of educator|industry_observer|product_demonstration|conversation_starter|founder_voice|event>",
  "topic": "<5-10 word topic>", "linkedin": "<post>", "facebook": "<post>",
  "headline": "<image headline>", "subline": "<image subline>",
- "visual": "card" or "demo_screenshot", "founder_attention": null or "<short sentence>"}"""
+ "visual": "card" or "demo_screenshot", "founder_attention": null or "<short sentence>"}
+You are also given verified_facts. Never state what a law, regulator or standard requires unless it is
+listed there. If an editor note later asks you to fix a claim and you are sure it is right, you may add a
+key "pushback": [{"claim": "...", "reason": "...", "quote": "exact words from the source material"}]."""
 
 
 def env(key, default=""):
@@ -106,24 +112,14 @@ def events():
 
 # --------------------------------------------------------------------- LLM
 def pick_model(base, hdr):
-    ids = [m["id"] for m in requests.get(base + "/models", headers=hdr, timeout=30).json()["data"]]
-    ids = [i for i in ids if not re.search(r"whisper|guard|tts|embed|vision|distil", i, re.I)]
-    for pat in ("gpt-oss-120b", "llama-3.3-70b", "70b", "gpt-oss", "llama", "gemini"):
-        for i in ids:
-            if pat in i:
-                return i
-    return ids[0]
+    """Kept for the article agent; the shared client in llmclient.py now does the real work."""
+    import llmclient
+    return llmclient.pick("writer")
 
 
 def llm(messages):
-    base = env("LLM_BASE_URL", "https://api.groq.com/openai/v1").rstrip("/")
-    hdr = {"Authorization": "Bearer " + env("LLM_API_KEY")}
-    model = env("LLM_MODEL") or pick_model(base, hdr)
-    r = requests.post(base + "/chat/completions", headers=hdr, timeout=180, json={
-        "model": model, "messages": messages, "temperature": 0.7,
-        "response_format": {"type": "json_object"}})
-    r.raise_for_status()
-    return json.loads(r.json()["choices"][0]["message"]["content"])
+    import llmclient
+    return llmclient.chat_json(messages, role="writer")
 
 
 # -------------------------------------------------------------- guardrails
@@ -191,11 +187,16 @@ def render(p, path, tag):
         pg = b.new_page(viewport={"width": 1080, "height": 1080})
         pg.set_content(page, wait_until="networkidle")
         pg.wait_for_timeout(600)
-        pg.screenshot(path=str(path))
+        pg.screenshot(path=str(path), type="jpeg", quality=92)
         b.close()
 
 
 # ------------------------------------------------------------------- stages
+def post_text(p):
+    return (f"LINKEDIN:\n{p.get('linkedin', '')}\n\nFACEBOOK:\n{p.get('facebook', '')}\n\n"
+            f"IMAGE HEADLINE: {p.get('headline', '')}\nIMAGE SUBLINE: {p.get('subline', '')}")
+
+
 def generate():
     hist = load_history()
     force = env("FORCE") == "true"
@@ -215,15 +216,34 @@ def generate():
         "events": evs,
         "recent_posts": [{"date": h["date"], "type": h["type"], "topic": h["topic"],
                           "opening": h["opening"]} for h in hist[-12:]],
+        "verified_facts": editor.ledger_lines(),
         **facts,
     }
-    corpus = brand + json.dumps(evs) + stand + json.dumps(facts["live_site_text"])
+    corpus = brand + json.dumps(evs) + stand + json.dumps(facts["live_site_text"]) + json.dumps(editor.ledger_lines())
     msgs = [{"role": "system", "content": brand + SCHEMA},
             {"role": "user", "content": json.dumps(ctx, ensure_ascii=False)}]
-    p = None
-    for _ in range(4):
+    p, held, reviews = None, None, 0
+    for _ in range(7):
         p = llm(msgs)
         errs = validate(p, corpus, stand)
+        text = post_text(p)
+        errs += editor.never_hits(text)
+        if not errs and editor.needs_review(text):
+            reviews += 1
+            time.sleep(15)  # free-tier rate limit
+            rev = editor.review(text, json.dumps(facts["live_site_text"]), p.get("pushback"), kind="post")
+            if rev["unavailable"]:
+                if editor.has_regulatory(text):
+                    held = {"open": [], "why": "The editor could not be reached and the draft makes regulatory claims."}
+                    break
+            elif not rev["ok"]:
+                log("editor open claims:", [c["text"] for c in rev["open"]])
+                if reviews >= 3:
+                    held = {"open": rev["open"], "why": "The writer and the editor could not settle these claims."}
+                    break
+                msgs += [{"role": "assistant", "content": json.dumps(p)},
+                         {"role": "user", "content": editor.feedback(rev["open"])}]
+                continue
         if not errs:
             break
         log("rejected:", errs)
@@ -233,11 +253,24 @@ def generate():
     else:
         sys.exit("The agent could not produce a compliant post today: " + "; ".join(errs))
 
+    if held:
+        body = (held["why"] + "\n\n### Draft that was held\n\n" + post_text(p)
+                + "\n\n### Claims in dispute\n\n" + (editor.dispute_markdown(held["open"], p.get("pushback")) or "(none listed)")
+                + "\n\n### What to do\n\nCheck the claim against the real standard or regulator. If it is right, "
+                "add a line starting VERIFIED: to agent/verified_facts.md. If it is wrong, add a NEVER: line. "
+                "Nothing was posted today. Tomorrow's run starts fresh.")
+        editor.open_issue("Post held: needs your decision (" + str(p.get("topic", "")) + ")", body)
+        hist.append({"date": TODAY.isoformat(), "type": str(p.get("type", "held")), "topic": str(p.get("topic", "")),
+                     "opening": str(p.get("linkedin", "")).strip().split("\n")[0][:90], "mode": "held"})
+        HIST.write_text(json.dumps(hist, indent=2, ensure_ascii=False))
+        log("Post held for the founder.")
+        return
+
     mentions_event = bool(re.search(r"cape town|solar & storage", p["linkedin"] + p["facebook"], re.I))
     tag = evs[0]["tag"] if (evs and mentions_event) else "NOVA METRICS · SOLAR INTELLIGENCE"
     stamp = dt.datetime.now(SAST).strftime("%H%M%S")
     post_id = f"{TODAY.isoformat()}-{stamp}"
-    name = f"{post_id}.png"
+    name = f"{post_id}.jpg"
     (OUT / "images").mkdir(parents=True, exist_ok=True)
     render(p, OUT / "images" / name, tag)
     branch = env("GITHUB_REF_NAME", "main")
