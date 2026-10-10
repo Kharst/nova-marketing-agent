@@ -17,10 +17,11 @@ concurrency:
 jobs:
   write:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     env:
       GH_TOKEN: ${{ github.token }}
       LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+      SEARCH_API_KEY: ${{ secrets.SEARCH_API_KEY }}
       SITE_REPO_TOKEN: ${{ secrets.SITE_REPO_TOKEN }}
       STAND_NO: ${{ vars.STAND_NO }}
     steps:
