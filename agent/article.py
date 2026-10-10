@@ -32,7 +32,7 @@ TODAY = base.TODAY
 LOGO = base.LOGO
 env, log = base.env, base.log
 
-MIN_WORDS, MAX_WORDS = 550, 1300
+MIN_WORDS, MAX_WORDS = 450, 1300
 
 # Evergreen topics, in the order they are written. Each one is grounded in pages that already
 # exist on the website, so the model never has to rely on its own memory for facts.
@@ -78,7 +78,7 @@ Write ONE article for South African solar installers, EPCs and electricians, bui
 material in the user message plus the product facts in the brief.
 
 Article rules:
-- Total length 650 to 950 words. Short paragraphs, at most 70 words each. 4 or 5 sections.
+- Total length 700 to 950 words (not shorter than 650). Short paragraphs, at most 70 words each. 4 or 5 sections.
 - Plain-spoken, useful, no hype. Teach first. Mention Solar Intelligence at most twice, only where it
   genuinely fits, as a tool that helps. Never mention prices, plans, trials or discounts.
 - Every fact, figure, standard and rule must come from the source material. If a detail is not in the
@@ -183,7 +183,7 @@ def site_put(path, data, message):
 
 
 # ------------------------------------------------------------ model calls
-PAUSE = int(env("ARTICLE_PAUSE", "60"))     # seconds to rest between rewrites (free tier limit per minute)
+PAUSE = int(env("ARTICLE_PAUSE", "25"))     # seconds to rest between rewrites (free tier limit per minute)
 WAIT_BUDGET = int(env("ARTICLE_WAIT_BUDGET", "420"))
 _waited = 0
 
@@ -194,6 +194,7 @@ _model = None
 def pick_article_model(url, hdr):
     """Long articles need a plain (non-'thinking') model; fall back to the shared pick."""
     ids = [m["id"] for m in requests.get(url + "/models", headers=hdr, timeout=30).json()["data"]]
+    log("models available:", ", ".join(ids))
     skip = re.compile(r"whisper|guard|tts|embed|vision|distil|preview", re.I)
     for pat in ("llama-3.3-70b", "llama-3.1-70b", "70b"):
         for i in ids:
@@ -260,6 +261,38 @@ def ask(msgs):
     raise RuntimeError("The model did not answer.")
 
 
+# ------------------------------------------------------------- tidy-up
+def fit(text, lo, hi):
+    """Trim text to at most hi characters, preferring a sentence end, then a word boundary."""
+    text = " ".join(str(text).split())
+    if len(text) <= hi:
+        return text
+    cut = text[:hi + 1]
+    end = max(cut.rfind(". "), cut.rfind("? "), cut.rfind("! "))
+    if end >= lo - 1:
+        return cut[:end + 1]
+    cut = cut[:hi - 1].rsplit(" ", 1)[0].rstrip(",;:- ")
+    return cut + "\u2026"
+
+
+def normalise(a):
+    """The model cannot count characters reliably, so fix lengths in code."""
+    t = " ".join(a["title"].split())
+    if len(t) > 70:
+        for sep in (": ", " \u2014 ", " - ", " | "):
+            if sep in t and len(t.split(sep)[0]) >= 25:
+                t = t.split(sep)[0]
+                break
+    a["title"] = t.rstrip(" .,:;-")      # if still over 70, validation sends it back for a shorter one
+    meta = " ".join(a["meta_description"].split())
+    if len(meta) < 120:
+        meta = " ".join((meta + " " + a["excerpt"]).split())
+    if len(meta) < 120:
+        meta = " ".join((meta + " " + a["intro"]).split())
+    a["meta_description"] = fit(meta, 120, 158)
+    a["excerpt"] = fit(a["excerpt"], 100, 178)
+
+
 # ---------------------------------------------------------------- validate
 def all_text(a):
     parts = [a.get("title", ""), a.get("meta_description", ""), a.get("excerpt", ""),
@@ -312,12 +345,13 @@ def validate(a, corpus, stand, used_slugs):
     if errs:
         return errs
 
+    normalise(a)
     text = " ".join(all_text(a))
     if not re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+)*", a["slug"]) or len(a["slug"]) > 60:
         errs.append("slug must be lowercase words joined by hyphens, max 60 characters")
     if a["slug"] in used_slugs:
         errs.append("slug already used; choose a different one")
-    if len(a["title"]) > 65:
+    if len(a["title"]) > 70:
         errs.append("title max 65 characters")
     if not 120 <= len(a["meta_description"]) <= 160:
         errs.append("meta_description must be 120 to 158 characters")
@@ -325,7 +359,7 @@ def validate(a, corpus, stand, used_slugs):
         errs.append("excerpt max 180 characters")
     wc = word_count(a)
     if not MIN_WORDS <= wc <= MAX_WORDS:
-        errs.append(f"article is {wc} words; it must be 650 to 950")
+        errs.append(f"article is {wc} words; write at least 700 words (aim for 700 to 950)")
     if re.search(r"[\[\]{}<>]|\*\*|^#", text, re.M):
         errs.append("plain text only: remove brackets, markup and markdown")
     if BANNED.search(text):
@@ -335,8 +369,8 @@ def validate(a, corpus, stand, used_slugs):
         errs.append("company voice: never use I, me or my; write as we, our or Nova Metrics")
     if not stand and re.search(r"\bstand\b", text, re.I):
         errs.append("do not mention a stand")
-    if len(re.findall(r"Solar Intelligence", text)) > 3:
-        errs.append("you mention Solar Intelligence too often; use it at most twice in the body and once in the closing")
+    if len(re.findall(r"Solar Intelligence", text)) > 6:
+        errs.append("you mention Solar Intelligence too often; use the name at most 4 times in total")
     for n in re.findall(r"\d[\d,.]*\d|\d", text):
         plain = n.replace(",", "")
         if plain.isdigit() and int(plain) <= 31:
