@@ -2,6 +2,8 @@ name: Nova Metrics marketing agent
 
 on:
   schedule:
+    # Every day at 07:00 South African time. The script itself only posts
+    # when the last post is at least MIN_DAYS (default 1) days old.
     - cron: "0 5 * * *"
   workflow_dispatch:
     inputs:
@@ -12,6 +14,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 concurrency:
   group: marketing-agent
@@ -20,8 +23,10 @@ concurrency:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     env:
+      GH_TOKEN: ${{ github.token }}
+      SEARCH_API_KEY: ${{ secrets.SEARCH_API_KEY }}
       LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
       MAKE_WEBHOOK_URL: ${{ secrets.MAKE_WEBHOOK_URL }}
       SITE_REPO_TOKEN: ${{ secrets.SITE_REPO_TOKEN }}
