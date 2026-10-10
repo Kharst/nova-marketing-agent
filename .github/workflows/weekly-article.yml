@@ -55,6 +55,6 @@ jobs:
           git checkout -b "article/$SLUG"
           git add articles-queue data/articles.json
           git commit -m "Article: $TITLE"
-          git push -u origin "article/$SLUG"
+          git push -u --force origin "article/$SLUG"
           gh pr create --base "${{ github.event.repository.default_branch }}" \
             --head "article/$SLUG" --title "Article: $TITLE" --body-file out/pr-body.md
