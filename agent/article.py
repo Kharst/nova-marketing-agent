@@ -188,27 +188,62 @@ WAIT_BUDGET = int(env("ARTICLE_WAIT_BUDGET", "420"))
 _waited = 0
 
 
+_model = None
+
+
+def model_call(msgs):
+    """One request to the free model. Prints the reason if the service refuses."""
+    global _model
+    url = env("LLM_BASE_URL", "https://api.groq.com/openai/v1").rstrip("/")
+    hdr = {"Authorization": "Bearer " + env("LLM_API_KEY")}
+    if not _model:
+        _model = env("LLM_MODEL") or base.pick_model(url, hdr)
+    r = requests.post(url + "/chat/completions", headers=hdr, timeout=180, json={
+        "model": _model, "messages": msgs, "temperature": 0.6,
+        "response_format": {"type": "json_object"}})
+    if not r.ok:
+        log(f"model said HTTP {r.status_code} ({_model}):", r.text[:700])
+        r.raise_for_status()
+    return json.loads(r.json()["choices"][0]["message"]["content"])
+
+
 def ask(msgs):
-    """Call the model; if the free tier says 'too many requests', wait and try again."""
+    """Call the model. Wait and retry if it is busy, retry if it returns a broken reply."""
     global _waited
-    for attempt in range(8):
+    broken = 0
+    for attempt in range(10):
         try:
-            return base.llm(msgs)
+            return model_call(msgs)
+        except (json.JSONDecodeError, KeyError, IndexError):
+            kind, code = "broken", 0
         except requests.HTTPError as e:
             r = e.response
             code = r.status_code if r is not None else 0
-            if code not in (429, 500, 502, 503, 504) or attempt == 7:
+            body = (r.text if r is not None else "").lower()
+            if code == 400 and ("json" in body or "generate" in body):
+                kind = "broken"
+            elif code in (429, 500, 502, 503, 504):
+                kind = "busy"
+            else:
                 raise
-            try:
-                wait = float(r.headers.get("retry-after")) + 3
-            except Exception:
-                wait = 25 * (attempt + 1)
-            wait = min(wait, 90)
-            if _waited + wait > WAIT_BUDGET:
-                raise
-            _waited += wait
-            log(f"model busy (HTTP {code}); waiting {wait:.0f}s before trying again")
-            time.sleep(wait)
+        if kind == "broken":
+            broken += 1
+            if broken > 3:
+                raise RuntimeError("The model keeps returning a broken reply; try again later.")
+            log(f"broken reply from the model; trying again ({broken}/3)")
+            time.sleep(8)
+            continue
+        try:
+            wait = float(r.headers.get("retry-after")) + 3
+        except Exception:
+            wait = 25 * (attempt + 1)
+        wait = min(wait, 90)
+        if _waited + wait > WAIT_BUDGET:
+            raise RuntimeError("The free model stayed busy too long; try again in a few minutes.")
+        _waited += wait
+        log(f"model busy (HTTP {code}); waiting {wait:.0f}s before trying again")
+        time.sleep(wait)
+    raise RuntimeError("The model did not answer.")
 
 
 # ---------------------------------------------------------------- validate
@@ -551,8 +586,10 @@ def generate():
     corpus = (brand + source_text + json.dumps(base.events()) + stand
               + f" {TODAY.year} {TODAY.year + 1}")
     used = {i["slug"] for i in items}
-    msgs = [{"role": "system", "content": brand + SCHEMA},
-            {"role": "user", "content": json.dumps(ctx, ensure_ascii=False)}]
+    first = [{"role": "system", "content": brand + SCHEMA},
+             {"role": "user", "content": json.dumps(ctx, ensure_ascii=False)}]
+    msgs = first
+    problems = []
     a, errs = None, []
     for _ in range(5):
         a = ask(msgs)
@@ -561,9 +598,11 @@ def generate():
             break
         log("rejected:", errs)
         time.sleep(PAUSE)
-        msgs += [{"role": "assistant", "content": json.dumps(a)},
-                 {"role": "user", "content": "Rejected: " + "; ".join(errs)
-                  + ". Rewrite and return the full JSON again."}]
+        # Keep requests small: send the list of problems, not the whole failed draft.
+        problems = (problems + errs)[-8:]
+        msgs = first + [{"role": "user", "content":
+                         "Your previous draft was rejected for these reasons: " + "; ".join(problems)
+                         + ". Write a new article that avoids every one of them. Return the full JSON."}]
     else:
         sys.exit("The agent could not produce a compliant article this week: " + "; ".join(errs))
 
