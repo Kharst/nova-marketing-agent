@@ -183,12 +183,23 @@ def site_put(path, data, message):
 
 
 # ------------------------------------------------------------ model calls
-PAUSE = int(env("ARTICLE_PAUSE", "40"))     # seconds to rest between rewrites (free tier limit per minute)
+PAUSE = int(env("ARTICLE_PAUSE", "60"))     # seconds to rest between rewrites (free tier limit per minute)
 WAIT_BUDGET = int(env("ARTICLE_WAIT_BUDGET", "420"))
 _waited = 0
 
 
 _model = None
+
+
+def pick_article_model(url, hdr):
+    """Long articles need a plain (non-'thinking') model; fall back to the shared pick."""
+    ids = [m["id"] for m in requests.get(url + "/models", headers=hdr, timeout=30).json()["data"]]
+    skip = re.compile(r"whisper|guard|tts|embed|vision|distil|preview", re.I)
+    for pat in ("llama-3.3-70b", "llama-3.1-70b", "70b"):
+        for i in ids:
+            if pat in i and not skip.search(i):
+                return i
+    return base.pick_model(url, hdr)
 
 
 def model_call(msgs):
@@ -197,10 +208,13 @@ def model_call(msgs):
     url = env("LLM_BASE_URL", "https://api.groq.com/openai/v1").rstrip("/")
     hdr = {"Authorization": "Bearer " + env("LLM_API_KEY")}
     if not _model:
-        _model = env("LLM_MODEL") or base.pick_model(url, hdr)
-    r = requests.post(url + "/chat/completions", headers=hdr, timeout=180, json={
-        "model": _model, "messages": msgs, "temperature": 0.6,
-        "response_format": {"type": "json_object"}})
+        _model = env("ARTICLE_MODEL") or pick_article_model(url, hdr)
+        log("article model:", _model)
+    body = {"model": _model, "messages": msgs, "temperature": 0.6,
+            "response_format": {"type": "json_object"}}
+    if "gpt-oss" in _model:
+        body["reasoning_effort"] = "low"      # these models otherwise spend the budget thinking
+    r = requests.post(url + "/chat/completions", headers=hdr, timeout=180, json=body)
     if not r.ok:
         log(f"model said HTTP {r.status_code} ({_model}):", r.text[:700])
         r.raise_for_status()
