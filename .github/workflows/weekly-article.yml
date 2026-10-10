@@ -1,0 +1,59 @@
+name: Weekly article agent
+
+on:
+  schedule:
+    # Every Monday at 07:00 South African time
+    - cron: "0 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: article-agent
+  cancel-in-progress: false
+
+jobs:
+  write:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+      SITE_REPO_TOKEN: ${{ secrets.SITE_REPO_TOKEN }}
+      STAND_NO: ${{ vars.STAND_NO }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Skip if an article is already waiting for approval
+        id: gate
+        run: |
+          n=$(gh pr list --state open --search "Article: in:title" --json number --jq 'length')
+          echo "waiting=$n" >> "$GITHUB_OUTPUT"
+          [ "$n" = "0" ] || echo "An article is already waiting for approval; nothing to do."
+
+      - uses: actions/setup-python@v5
+        if: steps.gate.outputs.waiting == '0'
+        with:
+          python-version: "3.12"
+
+      - name: Write the article
+        if: steps.gate.outputs.waiting == '0'
+        run: |
+          pip install requests
+          python agent/article.py generate
+
+      - name: Open the approval pull request
+        if: steps.gate.outputs.waiting == '0'
+        run: |
+          SLUG=$(python -c "import json;print(json.load(open('out/article-meta.json'))['slug'])")
+          TITLE=$(python -c "import json;print(json.load(open('out/article-meta.json'))['title'])")
+          git config user.name "nova-marketing-agent"
+          git config user.email "agent@users.noreply.github.com"
+          git checkout -b "article/$SLUG"
+          git add articles-queue data/articles.json
+          git commit -m "Article: $TITLE"
+          git push -u origin "article/$SLUG"
+          gh pr create --base "${{ github.event.repository.default_branch }}" \
+            --head "article/$SLUG" --title "Article: $TITLE" --body-file out/pr-body.md

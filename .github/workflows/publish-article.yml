@@ -1,0 +1,39 @@
+name: Publish approved article
+
+# Runs when you press "Merge pull request" on an article. It copies the article to the website
+# repository, rebuilds the articles index and updates the sitemap.
+on:
+  push:
+    branches: [main]
+    paths: ["articles-queue/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-article
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SITE_REPO_TOKEN: ${{ secrets.SITE_REPO_TOKEN }}
+      STAND_NO: ${{ vars.STAND_NO }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Publish to the website
+        run: |
+          pip install requests
+          python agent/article.py publish
+      - name: Record that it is published
+        run: |
+          git config user.name "nova-marketing-agent"
+          git config user.email "agent@users.noreply.github.com"
+          git add data/articles.json
+          git diff --cached --quiet || (git commit -m "Article published" && git pull --rebase && git push)
