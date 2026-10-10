@@ -283,8 +283,31 @@ def fit(text, lo, hi):
     return cut + "\u2026"
 
 
+def tidy(s):
+    """Remove a stray closing quote mark that the model sometimes leaves at the end of a paragraph."""
+    s = s.strip()
+    for op, cl in (("\u201c", "\u201d"), ('"', '"')):
+        while s.endswith(cl) and s.count(cl) > s.count(op) if op != cl else (s.endswith(cl) and s.count(cl) % 2 == 1):
+            s = s[:-1].rstrip()
+    while s.startswith("\u201d"):
+        s = s[1:].lstrip()
+    return s
+
+
 def normalise(a):
     """The model cannot count characters reliably, so fix lengths in code."""
+    for k in ("intro", "closing"):
+        if isinstance(a.get(k), str):
+            a[k] = tidy(a[k])
+    for sec in a.get("sections", []) if isinstance(a.get("sections"), list) else []:
+        if isinstance(sec, dict):
+            sec["paragraphs"] = [tidy(x) if isinstance(x, str) else x for x in sec.get("paragraphs", [])]
+            sec["bullets"] = [tidy(x) if isinstance(x, str) else x for x in sec.get("bullets", [])]
+    for f in a.get("faq", []) if isinstance(a.get("faq"), list) else []:
+        if isinstance(f, dict):
+            for k in ("q", "a"):
+                if isinstance(f.get(k), str):
+                    f[k] = tidy(f[k])
     t = " ".join(a["title"].split())
     if len(t) > 70:
         for sep in (": ", " \u2014 ", " - ", " | "):
