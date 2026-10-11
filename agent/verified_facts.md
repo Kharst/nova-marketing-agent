@@ -34,4 +34,4 @@ PENDING: Tariff escalation of 8.76% (2026), 8.83% (2027) and about 5% a year aft
 PENDING: Section 12B tax treatment: 100% first-year write-off for systems up to 1MW, 50/30/20 over three years above 1MW.
 PENDING: Panel degradation of 0.55% a year attributed to IEC 61215 (check what IEC 61215 actually covers before anyone cites it).
 PENDING: Systems classed as NERSA SSEG Category A and B.
-PENDING: The recommended DC/AC ratio range quoted in the website sizing guide (check it and the NRS wording in the product).
+
