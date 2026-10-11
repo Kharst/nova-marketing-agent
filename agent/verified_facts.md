@@ -22,6 +22,7 @@ How this file works
 # VERIFIED: <the claim in plain words> (checked: <document or website>, <date>)
 
 ## Never say
+NEVER: Do not say Solar Intelligence flags a DC/AC ratio below 1.0, checks depth of discharge stays within 85%, or never silently approves a design. It flags a ratio above 1.5 (commercial proposals only) and a battery that cannot meet 98% of the requested runtime. || (flags?\s+a?\s*ratio\s+outside)|(checks?\s+that\s+the\s+depth\s+of\s+discharge)|(not\s+silently\s+approve)
 NEVER: Do not say NRS 097-2-1 sets, defines or requires a DC/AC ratio range (such as 1.0 to 1.5), or that a ratio is compliant with NRS 097-2-1. || (NRS\s*097[^.\n]{0,160}(DC\s*/\s*AC|ratio))|((DC\s*/\s*AC|ratio)[^.\n]{0,160}NRS\s*097)
 NEVER: Do not say a system is "NRS 097-2-1 compliant" or that Solar Intelligence makes a system compliant. || NRS\s*097[-\s]?2[-\s]?1[^.\n]{0,40}(compliant|complies|compliance)|(compliant|complies|compliance)[^.\n]{0,40}NRS\s*097
 NEVER: Do not promise that a municipality, Eskom or NERSA will approve or register a system. || (will|guarantee[sd]?|ensures?)\s+(be\s+)?(approved|registered|accepted)|guarantee[^.\n]{0,80}(approv|regist|NERSA|Eskom|municipal)
