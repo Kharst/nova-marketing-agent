@@ -413,38 +413,27 @@ def validate(a, corpus, stand, used_slugs):
 
 # ------------------------------------------------------------------ render
 CSS = """
-:root{--navy:#0A2342;--gold:#C9A84C;--text:#12161F;--muted:#5B6B80;--border:rgba(10,35,66,.12);--surface:#fff;--bg:#F5F7FA}
-*{box-sizing:border-box}
-body{font-family:'DM Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);margin:0;line-height:1.7}
-.topbar{background:var(--navy);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
-.topbar img{height:30px;display:block}
-.topbar nav a{color:#fff;font-size:13px;text-decoration:none;margin-left:20px;opacity:.85}
-.topbar nav a:hover{color:var(--gold);opacity:1}
-.wrap{max-width:740px;margin:0 auto;padding:48px 22px 72px}
-.eyebrow{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#9A7B22;margin-bottom:10px}
-h1{font-family:'DM Serif Display',Georgia,serif;font-weight:400;font-size:2.15rem;line-height:1.2;margin:0 0 10px;color:var(--navy)}
-.meta{color:var(--muted);font-size:13px;margin-bottom:28px}
-.lead{font-size:18px;color:#2b3646;margin:0 0 24px}
-h2{font-family:'DM Serif Display',Georgia,serif;font-weight:400;font-size:1.45rem;line-height:1.25;color:var(--navy);margin:38px 0 10px}
-p{margin:0 0 15px;font-size:16px;color:#2b3646}
-ul{margin:0 0 18px;padding-left:22px}li{margin-bottom:7px;font-size:16px;color:#2b3646}
-.faq h3{font-size:16px;font-weight:700;color:var(--navy);margin:22px 0 6px}
-.event,.cta{background:#FBF6EA;border:1px solid rgba(201,168,76,.4);border-radius:12px;padding:20px 22px;margin:34px 0 0}
-.cta{background:var(--navy);border-color:var(--navy);color:#fff}
-.cta p{color:#e7ecf3}.cta strong{color:#fff}
-.btn{display:inline-block;background:var(--gold);color:#1A1305;font-weight:700;font-size:14px;padding:11px 20px;border-radius:7px;text-decoration:none;margin:4px 10px 0 0}
-.btn.alt{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.4)}
-.list a.item{display:block;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 22px;margin-bottom:14px;text-decoration:none}
-.list a.item:hover{border-color:var(--gold)}
-.list .t{font-family:'DM Serif Display',Georgia,serif;font-size:1.3rem;color:var(--navy);margin:0 0 4px}
-.list .d{font-size:12px;color:var(--muted);margin-bottom:6px}.list .x{font-size:15px;color:#2b3646;margin:0}
-footer{text-align:center;padding:30px;color:var(--muted);font-size:12px}
-footer a{color:var(--muted)}
+.article-wrap{max-width:740px;margin:0 auto;padding:0 24px 72px}
+.article-wrap .page-hero{padding:128px 0 24px}
+.article-wrap .eyebrow{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);margin-bottom:14px}
+.article-wrap .meta{font-size:13px;color:var(--text-dim);margin-top:14px}
+.article-wrap strong{color:var(--white);font-weight:600}
+.article-wrap .lead{font-size:18px;line-height:1.7;color:var(--white);margin:8px 0 28px}
+.article-wrap h2{font-family:var(--f-display);font-weight:700;font-size:30px;line-height:1.1;color:var(--white);margin:46px 0 14px}
+.article-wrap h3{font-size:16px;font-weight:600;color:var(--white);margin:24px 0 6px}
+.article-wrap p{font-size:16px;line-height:1.8;color:var(--text);margin:0 0 16px}
+.article-wrap ul{margin:0 0 18px;padding-left:0}
+.article-wrap li{font-size:16px;line-height:1.7;color:var(--text);padding-left:18px;position:relative;margin-bottom:8px}
+.article-wrap li::before{content:'\\00b7';position:absolute;left:4px;color:var(--amber);font-weight:700}
+.article-wrap .box{border:1px solid var(--line-2);background:var(--panel);padding:22px 24px;margin:38px 0 0}
+.article-wrap .box p{margin:0 0 14px}
+.article-wrap .box .btn{margin:4px 10px 0 0}
+.article-list a.item{display:block;border:1px solid var(--line);background:var(--panel);padding:22px 24px;margin-bottom:14px;text-decoration:none}
+.article-list a.item:hover{border-color:var(--amber)}
+.article-list .d{font-family:var(--f-mono);font-size:11px;color:var(--text-dim);margin-bottom:6px}
+.article-list .t{font-family:var(--f-display);font-weight:700;font-size:26px;line-height:1.1;color:var(--white);margin:0 0 8px}
+.article-list .x{font-size:14.5px;color:var(--text-dim);margin:0;line-height:1.7}
 """
-
-FONTS = ('<link rel="preconnect" href="https://fonts.googleapis.com">'
-         '<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family='
-         'DM+Serif+Display&display=swap" rel="stylesheet">')
 
 
 def site_url():
@@ -459,16 +448,44 @@ def nice_date(d):
     return f"{d.day} {d.strftime('%B %Y')}"
 
 
+NAV = [("Platform", "/products"), ("Job Portal", "/#job-portal"), ("Pricing", "/#pricing"),
+       ("Articles", "/articles/"), ("About", "/about"), ("Contact", "/contact")]
+
+MENU_JS = ("<script>(function(){var b=document.querySelector('.nav-hamburger'),m=document.querySelector('.mobile-menu');"
+           "if(b&&m){document.addEventListener('click',function(e){if(m.classList.contains('open')&&!m.contains(e.target)"
+           "&&e.target!==b){m.classList.remove('open');document.body.classList.remove('menu-open')}});"
+           "m.addEventListener('click',function(e){if(e.target.closest('a')){m.classList.remove('open');"
+           "document.body.classList.remove('menu-open')}})}})();</script>")
+
+
 def top(page_title):
-    s = site_url()
-    return (f'<div class="topbar"><a href="{s}/"><img src="{LOGO}" alt="Nova Metrics"></a>'
-            f'<nav><a href="{s}/">Home</a><a href="{s}/solar-intelligence">Solar Intelligence</a>'
-            f'<a href="{s}/articles/">Articles</a><a href="{s}/contact">Contact</a></nav></div>')
+    """The site header, identical to the main pages: six links, Sign in, Start free trial."""
+    links = "".join(f'<li><a href="{h}">{esc(t)}</a></li>' for t, h in NAV)
+    return (f'<header><a href="/" class="brand"><img src="{LOGO}" alt="Nova Metrics" class="brand-mark">'
+            f'<div class="brand-text"><div class="brand-name">Nova Metrics</div>'
+            f'<div class="brand-sub">Solar Intelligence</div></div></a>'
+            f'<button class="nav-hamburger" onclick="document.querySelector(\'.mobile-menu\').classList.toggle(\'open\');'
+            f'document.body.classList.toggle(\'menu-open\')" aria-label="Menu">☰</button>'
+            f'<div class="mobile-menu"><nav><ul>{links}</ul></nav>'
+            f'<div class="nav-actions"><a href="/solar-intelligence" class="btn">Sign in</a>'
+            f'<a href="/register" class="btn btn-solid">Start free trial</a></div></div></header>' + MENU_JS)
 
 
 def foot():
-    return (f'<footer>&copy; Nova Metrics (Pty) Ltd &middot; <a href="{site_url()}/privacy">Privacy</a>'
-            f' &middot; <a href="{site_url()}/terms">Terms</a></footer>')
+    """The site footer, identical to the main pages."""
+    return (f'<footer><div class="wrap"><div class="footer-grid"><div>'
+            f'<a href="/" class="brand"><img src="{LOGO}" alt="Nova Metrics" class="brand-mark">'
+            f'<div class="brand-text"><div class="brand-name">Nova Metrics</div></div></a>'
+            f'<p class="footer-desc">Solar Intelligence: the end-to-end operations platform for South African solar installers.</p></div>'
+            f'<div class="footer-col"><h5>Platform</h5><a href="/products">Solar Intelligence</a>'
+            f'<a href="/#job-portal">Job Portal</a><a href="/#pricing">Pricing</a></div>'
+            f'<div class="footer-col"><h5>Company</h5><a href="/about">About</a><a href="/faq">FAQ</a>'
+            f'<a href="/articles/">Articles</a><a href="/partner-apply">Partners</a><a href="/contact">Contact</a></div>'
+            f'<div class="footer-col"><h5>Contact</h5><a href="mailto:info@novametricsgroup.com">info@novametricsgroup.com</a>'
+            f'<a href="tel:+27677167716">+27 67 716 7716</a></div></div>'
+            f'<div class="footer-bottom"><span>© 2026 Nova Metrics. All rights reserved. '
+            f'<a href="/privacy">Privacy policy</a> · <a href="/terms">Terms of service</a></span>'
+            f'<span>Nova Metrics (Pty) Ltd, South Africa</span></div></div></footer>')
 
 
 def event_block(stand):
@@ -477,10 +494,10 @@ def event_block(stand):
             start, end = dt.date.fromisoformat(e["start"]), dt.date.fromisoformat(e["end"])
             when = (f"{start.day}–{end.day} {end.strftime('%B %Y')}"
                     if start.month == end.month else f"{nice_date(start)} to {nice_date(end)}")
-            return (f'<div class="event"><p><strong>Visiting {esc(e["name"])}?</strong> '
+            return (f'<div class="box"><p><strong>Visiting {esc(e["name"])}?</strong> '
                     f'We are at stand {esc(stand)}, {esc(when)}. Come and see how Solar Intelligence '
                     f'works on a real project.</p>'
-                    f'<a class="btn" href="{site_url()}/capetown-2026">Book a short demo</a></div>')
+                    f'<a class="btn btn-solid" href="{site_url()}/capetown-2026">Book a short demo</a></div>')
     return ""
 
 
@@ -494,13 +511,13 @@ def render_article(a, date, stand):
         body += [f"<p>{esc(p)}</p>" for p in s["paragraphs"]]
         if s["bullets"]:
             body.append("<ul>" + "".join(f"<li>{esc(b)}</li>" for b in s["bullets"]) + "</ul>")
-    body.append('<div class="faq"><h2>Common questions</h2>')
+    body.append('<div><h2>Common questions</h2>')
     for f in a["faq"]:
         body.append(f'<h3>{esc(f["q"])}</h3><p>{esc(f["a"])}</p>')
     body.append("</div>")
-    cta = (f'<div class="cta"><p><strong>{esc(a["closing"])}</strong></p>'
-           f'<a class="btn" href="{site_url()}/solar-intelligence">See Solar Intelligence</a>'
-           f'<a class="btn alt" href="{site_url()}/contact">Talk to us</a></div>')
+    cta = (f'<div class="box"><p><strong style="color:var(--white)">{esc(a["closing"])}</strong></p>'
+           f'<a class="btn btn-solid" href="{site_url()}/solar-intelligence">See Solar Intelligence</a>'
+           f'<a class="btn" href="{site_url()}/contact">Talk to us</a></div>')
     ld = [{
         "@context": "https://schema.org", "@type": "Article", "headline": a["title"],
         "description": a["meta_description"], "datePublished": date.isoformat(),
@@ -528,16 +545,18 @@ def render_article(a, date, stand):
 <meta property="og:site_name" content="Nova Metrics">
 <meta property="og:image" content="{LOGO}">
 <meta name="twitter:card" content="summary">
-{FONTS}
+<link rel="stylesheet" href="/style.css?v=5">
 <style>{CSS}</style>
 <script type="application/ld+json">{ld_json}</script>
 </head>
 <body>
 {top(a["title"])}
-<article class="wrap">
+<article class="article-wrap">
+<div class="page-hero">
 <div class="eyebrow">Nova Metrics &middot; Insights</div>
 <h1>{esc(a["title"])}</h1>
 <div class="meta">By Nova Metrics &middot; {nice_date(date)} &middot; {mins} min read</div>
+</div>
 {chr(10).join(body)}
 {event_block(stand)}
 {cta}
@@ -564,15 +583,17 @@ def render_index(items):
 <title>Articles for solar installers | Nova Metrics</title>
 <meta name="description" content="{esc(desc)}">
 <link rel="canonical" href="{site_url()}/articles/">
-{FONTS}
+<link rel="stylesheet" href="/style.css?v=5">
 <style>{CSS}</style>
 </head>
 <body>
 {top("Articles")}
-<main class="wrap list">
+<main class="article-wrap article-list">
+<div class="page-hero">
 <div class="eyebrow">Nova Metrics &middot; Insights</div>
-<h1>Articles for South African solar installers</h1>
-<p class="lead">{esc(desc)}</p>
+<h1>Articles for South African <span class="accent">solar installers</span></h1>
+<p>{esc(desc)}</p>
+</div>
 {cards}
 </main>
 {foot()}
@@ -728,24 +749,80 @@ def generate():
     log("Article written:", a["title"], f"({wc} words)")
 
 
+HEADER_RE = re.compile(r"<header>.*?</header>\s*<script>.*?</script>", re.S)
+FOOTER_RE = re.compile(r"<footer>.*?</footer>", re.S)
+OLD_ARTICLE_RE = re.compile(r'<article class="wrap">(.*?)</article>', re.S)
+
+
+def modernise(page):
+    """Articles published before the site design was shared used their own navy and gold page.
+    Rebuild them in the site design, keeping the article text, so every article looks the same."""
+    if "<header>" in page or 'class="topbar"' not in page:
+        return page
+    m = OLD_ARTICLE_RE.search(page)
+    if not m:
+        return page
+    inner = m.group(1)
+    hero = re.match(r'\s*(<div class="eyebrow">.*?</div>\s*<h1>.*?</h1>\s*<div class="meta">.*?</div>)\s*', inner, re.S)
+    if not hero:
+        return page
+    rest = inner[hero.end():]
+    rest = rest.replace('<div class="faq">', "<div>")
+    rest = rest.replace('<div class="event">', '<div class="box">').replace('<div class="cta">', '<div class="box">')
+    rest = rest.replace('class="btn alt"', 'class="btn__sec"').replace('class="btn"', 'class="btn btn-solid"')
+    rest = rest.replace('class="btn__sec"', 'class="btn"')
+    rest = rest.replace('<a class="btn" href="https://www.novametricsgroup.com/contact">', '<a class="btn" href="/contact">')
+    rest = re.sub(r'(?<=[.!?])\u201d</p>', "</p>", rest)
+    rest = re.sub(r"\bSP (\d)", r"SP\1", rest)
+    head = page[:page.index("<style>")]
+    head = re.sub(r'<link rel="preconnect".*?rel="stylesheet">\s*', "", head, flags=re.S)
+    tail_head = page[page.index("</style>") + len("</style>"):page.index("</head>")]
+    return (head + '<link rel="stylesheet" href="/style.css?v=5">\n<style>' + CSS + "</style>" + tail_head
+            + "</head>\n<body>\n" + top("") + '\n<article class="article-wrap">\n<div class="page-hero">\n'
+            + hero.group(1) + "\n</div>\n" + rest.strip() + "\n</article>\n" + foot() + "\n</body>\n</html>\n")
+
+
+def refresh_chrome(page):
+    """Give an already-written article the current header and footer, so site-wide menu changes reach old articles."""
+    page = modernise(page)
+    page = HEADER_RE.sub(lambda m: top(""), page, count=1)
+    return FOOTER_RE.sub(lambda m: foot(), page, count=1)
+
+
+def put_if_changed(path, data, message):
+    old, _ = site_get(path)
+    if old == data:
+        return False
+    site_put(path, data, message)
+    return True
+
+
 def publish():
     items = load_articles()
     todo = [i for i in items if i["status"] == "queued" and (QUEUE / f"{i['slug']}.html").exists()]
-    if not todo:
-        log("Nothing queued to publish.")
-        return
     if not env("SITE_REPO_TOKEN"):
         sys.exit("SITE_REPO_TOKEN is not set.")
     for i in todo:
-        site_put(f"articles/{i['slug']}.html", (QUEUE / f"{i['slug']}.html").read_bytes(),
+        site_put(f"articles/{i['slug']}.html", refresh_chrome((QUEUE / f"{i['slug']}.html").read_text()).encode(),
                  f"Article: {i['title']}")
         i["status"] = "published"
         i["published"] = dt.datetime.now(base.SAST).isoformat(timespec="minutes")
         log("Published:", i["title"])
-    site_put("articles/index.html", render_index(items).encode(), "Articles: update index")
+    for i in items:     # older articles: bring their header and footer up to date
+        f = QUEUE / f"{i['slug']}.html"
+        if i["status"] == "published" and i not in todo and f.exists():
+            if put_if_changed(f"articles/{i['slug']}.html", refresh_chrome(f.read_text()).encode(),
+                              f"Article: refresh menu and footer ({i['slug']})"):
+                log("Refreshed menu and footer:", i["slug"])
+    put_if_changed("articles/index.html", render_index(items).encode(), "Articles: update index")
+    feed = [{"slug": i["slug"], "title": i["title"], "excerpt": i["excerpt"], "date": i["date"]}
+            for i in sorted((x for x in items if x["status"] == "published"),
+                            key=lambda x: x["date"], reverse=True)]
+    put_if_changed("articles/articles.json", json.dumps(feed, indent=2, ensure_ascii=False).encode(),
+                   "Articles: update feed for the homepage")
     old, _ = site_get("sitemap.xml")
-    site_put("sitemap.xml", update_sitemap(old.decode() if old else "", items).encode(),
-             "Articles: update sitemap")
+    put_if_changed("sitemap.xml", update_sitemap(old.decode() if old else "", items).encode(),
+                   "Articles: update sitemap")
     save_articles(items)
 
 
