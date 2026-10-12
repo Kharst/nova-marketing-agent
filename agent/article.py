@@ -413,26 +413,78 @@ def validate(a, corpus, stand, used_slugs):
 
 # ------------------------------------------------------------------ render
 CSS = """
-.article-wrap{max-width:740px;margin:0 auto;padding:0 24px 72px}
-.article-wrap .page-hero{padding:128px 0 24px}
-.article-wrap .eyebrow{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--amber);margin-bottom:14px}
-.article-wrap .meta{font-size:13px;color:var(--text-dim);margin-top:14px}
+:root{--t1:#2BC4BC;--t2:#6AA6FF;--t3:#9B8CFF;--t4:#F2B866;--t5:#F27C93}
+body{position:relative}
+.glow{position:absolute;top:0;left:0;right:0;height:680px;pointer-events:none;z-index:0;background:radial-gradient(560px 340px at 10% 14%,rgba(43,196,188,.17),transparent 70%),radial-gradient(600px 380px at 90% 6%,rgba(155,140,255,.17),transparent 70%),radial-gradient(520px 320px at 55% 62%,rgba(106,166,255,.08),transparent 70%)}
+.read-progress{position:fixed;top:64px;left:0;height:3px;width:0;z-index:210;background:linear-gradient(90deg,var(--t1),var(--t2),var(--t3));border-radius:0 3px 3px 0}
+.article-wrap,.art-list{position:relative;z-index:1}
+.article-wrap{max-width:760px;margin:0 auto;padding:0 24px 88px}
+.article-wrap .page-hero{padding:116px 0 6px}
+.article-wrap .page-hero h1{text-transform:none;font-weight:700;font-size:clamp(34px,5vw,52px);line-height:1.05;letter-spacing:-.01em;color:var(--white)}
+.back{display:flex;width:fit-content;align-items:center;gap:8px;font-size:13px;color:var(--text-dim);text-decoration:none;padding:7px 15px 7px 12px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.03);margin-bottom:26px;transition:color .2s,border-color .2s,transform .2s}
+.back:hover{color:var(--white);border-color:var(--line-2);transform:translateX(-2px)}
+.eyebrow{display:inline-flex;align-items:center;gap:9px;font-size:12px;font-weight:500;letter-spacing:.05em;color:var(--t1);background:rgba(43,196,188,.1);border:1px solid rgba(43,196,188,.28);padding:6px 15px;border-radius:999px;margin-bottom:20px}
+.eyebrow::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--t1);box-shadow:0 0 0 3px rgba(43,196,188,.2)}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px;font-size:12.5px;color:var(--text-dim)}
+.meta .chip{padding:5px 13px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.03)}
 .article-wrap strong{color:var(--white);font-weight:600}
-.article-wrap .lead{font-size:18px;line-height:1.7;color:var(--white);margin:8px 0 28px}
-.article-wrap h2{font-family:var(--f-display);font-weight:700;font-size:30px;line-height:1.1;color:var(--white);margin:46px 0 14px}
-.article-wrap h3{font-size:16px;font-weight:600;color:var(--white);margin:24px 0 6px}
-.article-wrap p{font-size:16px;line-height:1.8;color:var(--text);margin:0 0 16px}
-.article-wrap ul{margin:0 0 18px;padding-left:0}
-.article-wrap li{font-size:16px;line-height:1.7;color:var(--text);padding-left:18px;position:relative;margin-bottom:8px}
-.article-wrap li::before{content:'\\00b7';position:absolute;left:4px;color:var(--amber);font-weight:700}
-.article-wrap .box{border:1px solid var(--line-2);background:var(--panel);padding:22px 24px;margin:38px 0 0}
-.article-wrap .box p{margin:0 0 14px}
-.article-wrap .box .btn{margin:4px 10px 0 0}
-.article-list a.item{display:block;border:1px solid var(--line);background:var(--panel);padding:22px 24px;margin-bottom:14px;text-decoration:none}
-.article-list a.item:hover{border-color:var(--amber)}
-.article-list .d{font-family:var(--f-mono);font-size:11px;color:var(--text-dim);margin-bottom:6px}
-.article-list .t{font-family:var(--f-display);font-weight:700;font-size:26px;line-height:1.1;color:var(--white);margin:0 0 8px}
-.article-list .x{font-size:14.5px;color:var(--text-dim);margin:0;line-height:1.7}
+.article-wrap .lead{font-size:19px;line-height:1.75;color:var(--white);margin:34px 0 6px;padding-left:20px;border-left:3px solid var(--t1);border-image:linear-gradient(var(--t1),var(--t3)) 1}
+.article-wrap h2{font-family:var(--f-display);font-weight:700;font-size:clamp(27px,3.4vw,35px);line-height:1.1;color:var(--white);margin:54px 0 14px}
+.article-wrap h2::before{content:'';display:inline-block;width:6px;height:.78em;border-radius:6px;margin-right:12px;background:linear-gradient(var(--t1),var(--t2))}
+.article-wrap h3{font-size:16.5px;font-weight:600;color:var(--white);margin:24px 0 6px}
+.article-wrap p{font-size:17px;line-height:1.85;color:#C9CFD8;margin:0 0 18px}
+.article-wrap ul{margin:0 0 20px;padding-left:0}
+.article-wrap li{font-size:17px;line-height:1.75;color:#C9CFD8;padding-left:26px;position:relative;margin-bottom:9px}
+.article-wrap li::before{content:'';position:absolute;left:4px;top:.72em;width:8px;height:8px;border-radius:50%;background:linear-gradient(135deg,var(--t1),var(--t2))}
+.qa{background:linear-gradient(160deg,var(--panel-2),var(--panel));border:1px solid var(--line);border-radius:18px;padding:20px 24px 6px;margin:0 0 14px}
+.qa h3{margin:0 0 8px}
+.qa p{font-size:15.5px;line-height:1.75;margin:0 0 16px}
+.article-wrap .box{border-radius:24px;padding:28px 28px 24px;margin:36px 0 0;background:linear-gradient(135deg,rgba(43,196,188,.13),rgba(155,140,255,.13));border:1px solid rgba(255,255,255,.14)}
+.article-wrap .box p{margin:0 0 16px;font-size:16.5px;line-height:1.7}
+.article-wrap .btn,.art-list .btn{border-radius:999px;padding:11px 22px;font-size:13.5px;margin:4px 10px 0 0;transition:transform .2s,filter .2s,border-color .2s,background .2s}
+.article-wrap .btn:hover,.art-list .btn:hover{transform:translateY(-1px);border-color:var(--t1)}
+.article-wrap .btn-solid,.art-list .btn-solid{background:linear-gradient(135deg,var(--t1),var(--t2));border-color:transparent;color:#04161A}
+.article-wrap .btn-solid:hover,.art-list .btn-solid:hover{filter:brightness(1.1);border-color:transparent}
+.art-list{max-width:1080px;margin:0 auto;padding:0 28px 96px}
+.art-hero{padding:124px 0 30px;text-align:center}
+.art-hero .eyebrow{margin-bottom:22px}
+.art-hero h1{text-wrap:balance;font-family:var(--f-display);text-transform:none;font-weight:700;font-size:clamp(38px,6vw,66px);line-height:1.02;letter-spacing:-.012em;color:var(--white);max-width:820px;margin:0 auto}
+.grad{background:linear-gradient(90deg,var(--t1),var(--t2) 55%,var(--t3));-webkit-background-clip:text;background-clip:text;color:transparent}
+.art-hero p{font-size:16.5px;line-height:1.75;color:var(--text-dim);max-width:560px;margin:18px auto 0}
+.toolbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin:26px 0 24px}
+.toolbar input{flex:0 1 300px;min-width:0;font:inherit;font-size:14px;font-weight:400;color:var(--white);background:var(--panel);border:1px solid var(--line-2);border-radius:999px;padding:11px 18px;outline:none;transition:border-color .2s,box-shadow .2s}
+.toolbar input::placeholder{color:var(--text-dim)}
+.toolbar input:focus{border-color:var(--t1);box-shadow:0 0 0 3px rgba(43,196,188,.18)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips button{font:inherit;font-size:13px;font-weight:500;color:var(--text-dim);background:transparent;border:1px solid var(--line-2);border-radius:999px;padding:8px 16px;cursor:pointer;transition:all .2s}
+.chips button:hover{color:var(--white);border-color:var(--t1)}
+.chips button.on{color:#04161A;background:linear-gradient(135deg,var(--t1),var(--t2));border-color:transparent}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}
+.tile{position:relative;display:flex;flex-direction:column;min-height:310px;padding:28px;border-radius:24px;border:1px solid var(--line);background:radial-gradient(380px 230px at 100% 0,rgba(var(--cr),.2),transparent 70%),linear-gradient(160deg,var(--panel-2),var(--panel));transition:transform .25s ease,border-color .25s,box-shadow .25s}
+.tile:hover,.tile:focus-within{transform:translateY(-5px);border-color:rgba(var(--cr),.6);box-shadow:0 22px 44px -22px rgba(var(--cr),.55)}
+.tile-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.tag{font-size:12px;font-weight:500;letter-spacing:.03em;color:var(--c);background:rgba(var(--cr),.12);border:1px solid rgba(var(--cr),.32);border-radius:999px;padding:5px 13px}
+.time{font-size:12.5px;color:var(--text-dim)}
+.tile h2{font-family:var(--f-sans);font-weight:600;font-size:23px;line-height:1.28;letter-spacing:-.01em;color:var(--white);margin:20px 0 12px}
+.tile h2 a{color:inherit;text-decoration:none}
+.tile h2 a::after{content:'';position:absolute;inset:0;border-radius:24px}
+.tile .x{font-size:15px;line-height:1.75;color:var(--text-dim);margin:0;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.tile-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:auto;padding-top:24px}
+.tile .d{font-size:12.5px;color:var(--text-dim)}
+.more{position:relative;z-index:2;display:inline-flex;align-items:center;gap:8px;font-size:13.5px;font-weight:500;color:var(--c);text-decoration:none;background:rgba(var(--cr),.1);border:1px solid rgba(var(--cr),.38);border-radius:999px;padding:9px 18px;transition:background .2s,color .2s,gap .2s}
+.tile:hover .more,.more:hover{background:var(--c);color:#06141A;gap:12px}
+.tile.ghost{border-style:dashed;border-color:var(--line-2);background:transparent;justify-content:center;align-items:flex-start}
+.tile.ghost:hover{transform:none;box-shadow:none;border-color:var(--t2)}
+.tile.ghost h2{margin-top:18px}
+.tile.ghost .tile-foot{justify-content:flex-start;padding-top:8px;margin-top:0}
+.tile.ghost .x{margin-bottom:14px}
+.nomatch{display:none;text-align:center;color:var(--text-dim);padding:40px 0}
+.band{margin-top:46px;border-radius:28px;padding:40px 32px;text-align:center;background:linear-gradient(135deg,rgba(43,196,188,.14),rgba(155,140,255,.15));border:1px solid rgba(255,255,255,.14)}
+.band h2{font-family:var(--f-display);font-weight:700;font-size:clamp(28px,4vw,40px);line-height:1.08;color:var(--white);margin:0 0 10px}
+.band p{font-size:15.5px;line-height:1.7;color:var(--text);max-width:480px;margin:0 auto 20px}
+.band .btn{margin:4px 5px 0}
+@media (max-width:720px){.grid{grid-template-columns:1fr}.art-list{padding:0 18px 72px}.tile{min-height:0;padding:24px}.toolbar input{flex-basis:100%}.band{padding:32px 20px}.article-wrap{padding:0 20px 72px}.article-wrap p,.article-wrap li{font-size:16.5px}}
+@media (prefers-reduced-motion:reduce){.tile,.back,.btn,.more{transition:none}.tile:hover{transform:none}}
 """
 
 
@@ -513,7 +565,7 @@ def render_article(a, date, stand):
             body.append("<ul>" + "".join(f"<li>{esc(b)}</li>" for b in s["bullets"]) + "</ul>")
     body.append('<div><h2>Common questions</h2>')
     for f in a["faq"]:
-        body.append(f'<h3>{esc(f["q"])}</h3><p>{esc(f["a"])}</p>')
+        body.append(f'<div class="qa"><h3>{esc(f["q"])}</h3><p>{esc(f["a"])}</p></div>')
     body.append("</div>")
     cta = (f'<div class="box"><p><strong style="color:var(--white)">{esc(a["closing"])}</strong></p>'
            f'<a class="btn btn-solid" href="{site_url()}/solar-intelligence">See Solar Intelligence</a>'
@@ -550,30 +602,80 @@ def render_article(a, date, stand):
 <script type="application/ld+json">{ld_json}</script>
 </head>
 <body>
-{top(a["title"])}
+{top(a["title"])}{DECOR}
 <article class="article-wrap">
 <div class="page-hero">
+<a class="back" href="/articles/">&larr; All articles</a>
 <div class="eyebrow">Nova Metrics &middot; Insights</div>
 <h1>{esc(a["title"])}</h1>
-<div class="meta">By Nova Metrics &middot; {nice_date(date)} &middot; {mins} min read</div>
+<div class="meta"><span class="chip">By Nova Metrics</span><span class="chip">{nice_date(date)}</span><span class="chip">{mins} min read</span></div>
 </div>
 {chr(10).join(body)}
 {event_block(stand)}
 {cta}
 </article>
-{foot()}
+{foot()}{PROGRESS_JS}
 </body>
 </html>
 """
 
 
+TAGS = {"system-sizing": ("Sizing", 0), "proposal-numbers": ("Proposals", 1), "proposal-that-sells": ("Proposals", 1),
+        "compliance": ("Compliance", 2), "site-visit": ("Site visits", 3), "closing-the-job": ("Sales", 4),
+        "battery-backup": ("Batteries", 0), "commercial-solar-12b": ("Commercial", 3)}
+COLOURS = [("#2BC4BC", "43,196,188"), ("#6AA6FF", "106,166,255"), ("#9B8CFF", "155,140,255"),
+           ("#F2B866", "242,184,102"), ("#F27C93", "242,124,147")]
+DECOR = '<div class="glow"></div><div class="read-progress" id="rp"></div>'
+PROGRESS_JS = ("<script>(function(){var b=document.getElementById('rp');if(!b)return;function f(){var h=document.documentElement,"
+               "m=h.scrollHeight-h.clientHeight;b.style.width=(m>0?Math.min(100,h.scrollTop/m*100):0)+'%'}"
+               "window.addEventListener('scroll',f,{passive:true});f()})();</script>")
+FILTER_JS = ("<script>(function(){var q=document.getElementById('q'),tiles=[].slice.call(document.querySelectorAll('.tile[data-t]')),"
+             "chips=[].slice.call(document.querySelectorAll('.chips button')),none=document.getElementById('nomatch'),tag='';"
+             "function run(){var s=(q?q.value:'').toLowerCase().trim(),n=0;tiles.forEach(function(t){var ok=(!tag||t.dataset.tag===tag)"
+             "&&(!s||t.dataset.t.indexOf(s)>-1);t.style.display=ok?'':'none';if(ok)n++});"
+             "var g=document.querySelector('.tile.ghost');if(g)g.style.display=(tag||s)?'none':'';none.style.display=n?'none':'block'}"
+             "if(q)q.addEventListener('input',run);chips.forEach(function(c){c.addEventListener('click',function(){"
+             "tag=c.dataset.tag;chips.forEach(function(x){x.classList.toggle('on',x===c)});run()})})})();</script>")
+
+
+def tag_of(i):
+    label, idx = TAGS.get(i.get("topic_key", ""), ("Insights", 1))
+    return label, COLOURS[idx % len(COLOURS)]
+
+
 def render_index(items):
     pubs = sorted([i for i in items if i["status"] == "published"], key=lambda i: i["date"], reverse=True)
-    cards = "".join(
-        f'<a class="item" href="{site_url()}/articles/{esc(i["slug"])}">'
-        f'<div class="d">{nice_date(dt.date.fromisoformat(i["date"]))}</div>'
-        f'<div class="t">{esc(i["title"])}</div><p class="x">{esc(i["excerpt"])}</p></a>'
-        for i in pubs) or "<p>New articles are on the way.</p>"
+    tiles = []
+    for i in pubs:
+        label, (c, cr) = tag_of(i)
+        url = f'{site_url()}/articles/{esc(i["slug"])}'
+        mins = f'<span class="time">{int(i["mins"])} min read</span>' if i.get("mins") else ""
+        tiles.append(
+            f'<article class="tile" style="--c:{c};--cr:{cr}" data-tag="{esc(label)}" '
+            f'data-t="{esc((i["title"] + " " + i["excerpt"]).lower())}">'
+            f'<div class="tile-top"><span class="tag">{esc(label)}</span>{mins}</div>'
+            f'<h2><a href="{url}">{esc(i["title"])}</a></h2><p class="x">{esc(i["excerpt"])}</p>'
+            f'<div class="tile-foot"><span class="d">{nice_date(dt.date.fromisoformat(i["date"]))}</span>'
+            f'<a class="more" href="{url}" aria-label="Read more: {esc(i["title"])}">Read more <span aria-hidden="true">&rarr;</span></a>'
+            f'</div></article>')
+    if pubs and len(pubs) % 2 == 1:
+        tiles.append('<article class="tile ghost" style="--c:#6AA6FF;--cr:106,166,255"><div class="tile-top">'
+                     '<span class="tag">Your turn</span></div><h2>Have a topic in mind?</h2>'
+                     '<p class="x">Tell us what you would like to see covered and we will take it from there.</p>'
+                     '<div class="tile-foot"><a class="more" href="/contact">Suggest a topic '
+                     '<span aria-hidden="true">&rarr;</span></a></div></article>')
+    labels = []
+    for i in pubs:
+        l = tag_of(i)[0]
+        if l not in labels:
+            labels.append(l)
+    toolbar = ""
+    if len(pubs) >= 2:
+        chips = '<button class="on" data-tag="">All</button>' + "".join(
+            f'<button data-tag="{esc(l)}">{esc(l)}</button>' for l in labels) if len(labels) > 1 else ""
+        toolbar = (f'<div class="toolbar"><div class="chips">{chips}</div>'
+                   '<input id="q" type="search" placeholder="Search articles" aria-label="Search articles"></div>')
+    cards = "".join(tiles) or '<p style="text-align:center;color:var(--text-dim)">New articles are on the way.</p>'
     desc = "Practical guides for South African solar installers from Nova Metrics, the team behind Solar Intelligence."
     return f"""<!DOCTYPE html>
 <html lang="en-ZA">
@@ -587,16 +689,20 @@ def render_index(items):
 <style>{CSS}</style>
 </head>
 <body>
-{top("Articles")}
-<main class="article-wrap article-list">
-<div class="page-hero">
+{top("Articles")}<div class="glow"></div>
+<main class="art-list">
+<div class="art-hero">
 <div class="eyebrow">Nova Metrics &middot; Insights</div>
-<h1>Articles for South African <span class="accent">solar installers</span></h1>
+<h1>Articles for South African <span class="grad">solar installers</span></h1>
 <p>{esc(desc)}</p>
 </div>
-{cards}
+{toolbar}
+<div class="grid">{cards}</div>
+<p class="nomatch" id="nomatch">Nothing matches that search yet.</p>
+<div class="band"><h2>See the numbers for yourself</h2><p>Solar Intelligence turns a site's details into a clear, client-ready proposal.</p>
+<a class="btn btn-solid" href="/solar-intelligence">See Solar Intelligence</a><a class="btn" href="/register">Start free trial</a></div>
 </main>
-{foot()}
+{foot()}{FILTER_JS}
 </body>
 </html>
 """
@@ -782,11 +888,34 @@ def modernise(page):
             + hero.group(1) + "\n</div>\n" + rest.strip() + "\n</article>\n" + foot() + "\n</body>\n</html>\n")
 
 
+STYLE_RE = re.compile(r"<style>.*?</style>", re.S)
+META_RE = re.compile(r'<div class="meta">By Nova Metrics &middot; (.*?) &middot; (\d+ min read)</div>')
+QA_RE = re.compile(r"<h3>(.*?)</h3><p>(.*?)</p>", re.S)
+MINS_RE = re.compile(r"(\d+) min read")
+
+
 def refresh_chrome(page):
-    """Give an already-written article the current header and footer, so site-wide menu changes reach old articles."""
+    """Give an already-written article the current header, footer and look, keeping its text exactly as it is.
+    Safe to run again and again."""
     page = modernise(page)
     page = HEADER_RE.sub(lambda m: top(""), page, count=1)
-    return FOOTER_RE.sub(lambda m: foot(), page, count=1)
+    page = FOOTER_RE.sub(lambda m: foot(), page, count=1)
+    page = STYLE_RE.sub(lambda m: "<style>" + CSS + "</style>", page, count=1)
+    if 'class="glow"' not in page:
+        page = page.replace("</script>\n<article", "</script>" + DECOR + "\n<article", 1) \
+            if "</script>\n<article" in page else page.replace("<article", DECOR + "\n<article", 1)
+    if 'class="back"' not in page:
+        page = page.replace('<div class="page-hero">\n', '<div class="page-hero">\n<a class="back" href="/articles/">&larr; All articles</a>\n', 1)
+    page = META_RE.sub(lambda m: '<div class="meta"><span class="chip">By Nova Metrics</span><span class="chip">'
+                       + m.group(1) + '</span><span class="chip">' + m.group(2) + "</span></div>", page, count=1)
+    if 'class="qa"' not in page and "<div><h2>Common questions</h2>" in page:
+        head, _, tail = page.partition("<div><h2>Common questions</h2>")
+        faq, sep, rest = tail.partition("</div>")
+        faq = QA_RE.sub(lambda m: f'<div class="qa"><h3>{m.group(1)}</h3><p>{m.group(2)}</p></div>', faq)
+        page = head + "<div><h2>Common questions</h2>" + faq + sep + rest
+    if "id=\"rp\"" in page and "getElementById('rp')" not in page:
+        page = page.replace("</body>", PROGRESS_JS + "\n</body>", 1)
+    return page
 
 
 def put_if_changed(path, data, message):
@@ -808,14 +937,32 @@ def publish():
         i["status"] = "published"
         i["published"] = dt.datetime.now(base.SAST).isoformat(timespec="minutes")
         log("Published:", i["title"])
-    for i in items:     # older articles: bring their header and footer up to date
-        f = QUEUE / f"{i['slug']}.html"
-        if i["status"] == "published" and i not in todo and f.exists():
-            if put_if_changed(f"articles/{i['slug']}.html", refresh_chrome(f.read_text()).encode(),
-                              f"Article: refresh menu and footer ({i['slug']})"):
-                log("Refreshed menu and footer:", i["slug"])
+    for i in items:     # older articles: refresh from the copy that is live on the site, so edits made there are kept
+        if i["status"] != "published" or i in todo:
+            continue
+        live, _ = site_get(f"articles/{i['slug']}.html")
+        if not live:
+            continue
+        live = live.decode()
+        fresh = refresh_chrome(live)
+        if fresh != live:
+            site_put(f"articles/{i['slug']}.html", fresh.encode(), f"Article: refresh look, menu and footer ({i['slug']})")
+            log("Refreshed look, menu and footer:", i["slug"])
+    for i in items:     # reading time for the tiles, read from the page itself
+        if i["status"] != "published":
+            continue
+        txt = None
+        if (QUEUE / f"{i['slug']}.html").exists() and i in todo:
+            txt = (QUEUE / f"{i['slug']}.html").read_text()
+        else:
+            live, _ = site_get(f"articles/{i['slug']}.html")
+            txt = live.decode() if live else None
+        m = MINS_RE.search(txt or "")
+        if m:
+            i["mins"] = int(m.group(1))
     put_if_changed("articles/index.html", render_index(items).encode(), "Articles: update index")
-    feed = [{"slug": i["slug"], "title": i["title"], "excerpt": i["excerpt"], "date": i["date"]}
+    feed = [{"slug": i["slug"], "title": i["title"], "excerpt": i["excerpt"], "date": i["date"],
+             "topic_key": i.get("topic_key", ""), "mins": i.get("mins")}
             for i in sorted((x for x in items if x["status"] == "published"),
                             key=lambda x: x["date"], reverse=True)]
     put_if_changed("articles/articles.json", json.dumps(feed, indent=2, ensure_ascii=False).encode(),
