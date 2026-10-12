@@ -110,5 +110,12 @@
     "topic": "Fast, accurate proposals without admin overload",
     "opening": "When a client asks for a quote, the clock starts ticking. Solar Intelligence lets you ente",
     "mode": "held"
+  },
+  {
+    "date": "2026-10-12",
+    "type": "industry_observer",
+    "topic": "Load‑shedding decline and installer workflow",
+    "opening": "Load‑shedding is easing across South Africa, giving installers more stable grid conditions",
+    "mode": "review"
   }
 ]
