@@ -474,7 +474,7 @@ def validate(a, corpus, stand, used_slugs):
         return errs
 
     normalise(a)
-        limit_name(a, 4)
+    limit_name(a, 4)
     text = " ".join(all_text(a))
     if not re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+)*", a["slug"]) or len(a["slug"]) > 60:
         errs.append("slug must be lowercase words joined by hyphens, max 60 characters")
