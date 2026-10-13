@@ -114,7 +114,7 @@ Return ONLY a JSON object with exactly these keys:
 BANNED = re.compile(
     r"guarantee|number one|#1\b|best-in-class|revolutionary|game.?changer|supabase|\bRLS\b|"
     r"edge function|api key|our (customers|clients)|customers say|clients (tell|told) us|testimonial|"
-    r"case study|\bpartner(s|ship)?\b|\bcommissions?\b|free trial|\bdiscounts?\b(?! rate)|per month|/month|"
+    r"case study|\bpartner(s|ship)?\b|\bcommissions?\b|free trial|\bdiscounts?\b(?! rate| future| cash| the| each| them| these| those| expected)|per month|/month|"
     r"(?-i:\bR\s?\d)", re.I)
 
 
@@ -408,6 +408,35 @@ def word_count(a):
     return len(" ".join(body).split())
 
 
+def limit_name(a, keep=4):
+    """Repair overuse of the product name in code instead of rejecting the whole draft:
+    keep the first few mentions, then say "the platform"."""
+    skip = ("slug", "review_notes", "pushback")
+    count = [0]
+
+    def fix(s):
+        def rep(m):
+            count[0] += 1
+            if count[0] <= keep:
+                return m.group(0)
+            before = s[:m.start()].rstrip()
+            return "The platform" if (not before or before[-1] in ".!?") else "the platform"
+        return re.sub(r"Solar Intelligence", rep, s)
+
+    def walk(x):
+        if isinstance(x, str):
+            return fix(x)
+        if isinstance(x, list):
+            return [walk(i) for i in x]
+        if isinstance(x, dict):
+            return {k: walk(v) for k, v in x.items()}
+        return x
+
+    for k in list(a.keys()):
+        if k not in skip:
+            a[k] = walk(a[k])
+
+
 def validate(a, corpus, stand, used_slugs):
     errs = []
     if not isinstance(a, dict) or not a:
@@ -445,6 +474,7 @@ def validate(a, corpus, stand, used_slugs):
         return errs
 
     normalise(a)
+        limit_name(a, 4)
     text = " ".join(all_text(a))
     if not re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+)*", a["slug"]) or len(a["slug"]) > 60:
         errs.append("slug must be lowercase words joined by hyphens, max 60 characters")
