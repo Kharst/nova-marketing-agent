@@ -6,7 +6,8 @@
     "date": "2026-10-10",
     "topic_key": "system-sizing",
     "status": "published",
-    "published": "2026-10-10T19:01+02:00"
+    "published": "2026-10-10T19:01+02:00",
+    "mins": 3
   },
   {
     "slug": "explain-solar-proposal-numbers-clients",
@@ -14,6 +15,8 @@
     "excerpt": "A clear walk‑through of the key figures behind a solar proposal – from production estimates to tariff growth – helps installers build confidence with their customers.",
     "date": "2026-10-13",
     "topic_key": "proposal-numbers",
-    "status": "queued"
+    "status": "published",
+    "published": "2026-10-13T20:35+02:00",
+    "mins": 4
   }
 ]
