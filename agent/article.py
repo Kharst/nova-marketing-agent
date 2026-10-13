@@ -114,7 +114,64 @@ Return ONLY a JSON object with exactly these keys:
 BANNED = re.compile(
     r"guarantee|number one|#1\b|best-in-class|revolutionary|game.?changer|supabase|\bRLS\b|"
     r"edge function|api key|our (customers|clients)|customers say|clients (tell|told) us|testimonial|"
-    r"case study|\bpartner(s|ship)?\b|commission|free trial|discount|per month|/month|\bR\s?\d", re.I)
+    r"case study|\bpartner(s|ship)?\b|\bcommissions?\b|free trial|\bdiscounts?\b(?! rate)|per month|/month|"
+    r"(?-i:\bR\s?\d)", re.I)
+
+
+def banned_hits(text):
+    """The exact words that tripped the filter, so the writer can be told precisely what to remove."""
+    seen = []
+    for m in BANNED.finditer(text):
+        w = m.group(0).strip()
+        if w.lower() not in [s.lower() for s in seen]:
+            seen.append(w)
+    return seen[:8]
+
+
+def clean_source(t):
+    """The website guides are written for partners. Strip that wording before the writer sees it,
+    so it is never tempted to repeat it (and the numbers check still sees the same text)."""
+    t = re.sub(r"(?i)\b(back to portal|partner (network|resource|programme|program|portal))\b", " ", t)
+    t = re.sub(r"(?i)\bwhere partners see this\b", "How proposals present this", t)
+    t = re.sub(r"(?i)\bpartners\b", "installers", t)
+    t = re.sub(r"(?i)\bpartner\b", "installer", t)
+    t = re.sub(r"(?i)\bcommissions?\b(?!ing)", "", t)
+    return re.sub(r"\s+", " ", t).strip()
+
+
+def scrub(x):
+    """Quietly repair harmless formatting slips instead of rejecting a whole article for them."""
+    if isinstance(x, str):
+        x = re.sub(r"</?[A-Za-z][^>]*>", "", x)                  # stray html tags
+        x = x.replace("**", "").replace("__", "")
+        x = re.sub(r"(?m)^\s*#+\s*", "", x)
+        x = re.sub(r"\[\d+\]", "", x)                           # citation marks like [1]
+        x = x.replace("[", "(").replace("]", ")").replace("{", "(").replace("}", ")")
+        x = re.sub(r"\s*>=\s*", " at least ", x)
+        x = re.sub(r"\s*<=\s*", " at most ", x)
+        x = re.sub(r"\s*<\s*(?=\d)", " under ", x)
+        x = re.sub(r"\s*>\s*(?=\d)", " over ", x)
+        return re.sub(r"[ \t]{2,}", " ", x).strip()
+    if isinstance(x, list):
+        return [scrub(i) for i in x]
+    if isinstance(x, dict):
+        return {k: scrub(v) for k, v in x.items()}
+    return x
+
+
+def coerce(res):
+    """Models sometimes wrap the article in a list or in {"article": {...}}. Unwrap it."""
+    for _ in range(3):
+        if isinstance(res, list):
+            res = next((i for i in res if isinstance(i, dict)), res[0] if res else {})
+        elif isinstance(res, dict) and "title" not in res and len(res) <= 3:
+            inner = next((v for v in res.values() if isinstance(v, (dict, list))), None)
+            if inner is None:
+                break
+            res = inner
+        else:
+            break
+    return res if isinstance(res, dict) else {}
 
 
 # ----------------------------------------------------------------- history
@@ -191,8 +248,9 @@ def site_put(path, data, message):
 
 
 # ------------------------------------------------------------ model calls
-PAUSE = int(env("ARTICLE_PAUSE", "25"))     # seconds to rest between rewrites (free tier limit per minute)
-WAIT_BUDGET = int(env("ARTICLE_WAIT_BUDGET", "420"))
+PAUSE = int(env("ARTICLE_PAUSE", "55"))     # minimum seconds between article requests (free tier: 8000 tokens a minute)
+WAIT_BUDGET = int(env("ARTICLE_WAIT_BUDGET", "480"))
+_last_call = 0.0
 _waited = 0
 
 
@@ -219,15 +277,21 @@ def model_call(msgs):
     if not _model:
         _model = env("ARTICLE_MODEL") or pick_article_model(url, hdr)
         log("article model:", _model)
+    global _last_call
+    gap = PAUSE - (time.monotonic() - _last_call)
+    if _last_call and gap > 0:
+        log(f"resting {gap:.0f}s to stay under the free per-minute limit")
+        time.sleep(gap)
     body = {"model": _model, "messages": msgs, "temperature": 0.6,
             "response_format": {"type": "json_object"}}
     if "gpt-oss" in _model:
         body["reasoning_effort"] = "low"      # these models otherwise spend the budget thinking
     r = requests.post(url + "/chat/completions", headers=hdr, timeout=180, json=body)
+    _last_call = time.monotonic()
     if not r.ok:
         log(f"model said HTTP {r.status_code} ({_model}):", r.text[:700])
         r.raise_for_status()
-    return json.loads(r.json()["choices"][0]["message"]["content"])
+    return coerce(json.loads(r.json()["choices"][0]["message"]["content"]))
 
 
 def ask(msgs):
@@ -346,6 +410,10 @@ def word_count(a):
 
 def validate(a, corpus, stand, used_slugs):
     errs = []
+    if not isinstance(a, dict) or not a:
+        return ["the reply must be one JSON object with title, slug, meta_description, excerpt, intro, "
+                "sections, faq, closing and review_notes"]
+    a.update(scrub({k: v for k, v in a.items() if k != "pushback"}))
     try:
         for k in ("title", "slug", "meta_description", "excerpt", "intro", "closing"):
             if not isinstance(a.get(k), str) or not a[k].strip():
@@ -390,12 +458,14 @@ def validate(a, corpus, stand, used_slugs):
         errs.append("excerpt max 180 characters")
     wc = word_count(a)
     if not MIN_WORDS <= wc <= MAX_WORDS:
-        errs.append(f"article is {wc} words; write at least 700 words (aim for 700 to 950)")
+        errs.append(f"article is {wc} words; write between {max(MIN_WORDS, 650)} and 1000 words")
     if re.search(r"[\[\]{}<>]|\*\*|^#", text, re.M):
-        errs.append("plain text only: remove brackets, markup and markdown")
-    if BANNED.search(text):
-        errs.append("contains a banned word or claim (guarantees, hype, testimonials, partners, prices, "
-                    "trials, internals)")
+        bad = sorted(set(re.findall(r"[\[\]{}<>]|\*\*|^#", text, re.M)))
+        errs.append("plain text only: remove these characters: " + " ".join(bad))
+    hits = banned_hits(text)
+    if hits:
+        errs.append("remove these words and rewrite the sentences that use them (they are not allowed): "
+                    + ", ".join(f"'{h}'" for h in hits))
     if re.search(r"\bI(['’](m|ve|d|ll))?\b", text) or re.search(r"\b(me|my|myself|mine)\b", text, re.I):
         errs.append("company voice: never use I, me or my; write as we, our or Nova Metrics")
     if not stand and re.search(r"\bstand\b", text, re.I):
@@ -748,7 +818,7 @@ def build_context(topic, items):
     if topic:
         ctx["article_angle"] = topic["angle"]
         for path in topic["sources"]:
-            t = strip_html(read_site_file(path))
+            t = clean_source(strip_html(read_site_file(path)))
             ctx.setdefault("source_material", {})[path] = t
             texts.append(t)
     else:
@@ -813,7 +883,6 @@ def generate():
             errs = editor.never_hits(text)
         if errs:
             log("rejected:", errs)
-            time.sleep(PAUSE)
             # Keep requests small: send the list of problems, not the whole failed draft.
             problems = (problems + errs)[-8:]
             msgs = first + [{"role": "user", "content":
@@ -821,7 +890,6 @@ def generate():
                              + ". Write a new article that avoids every one of them. Return the full JSON."}]
             continue
         reviews += 1
-        time.sleep(PAUSE)
         rev = editor.review(text, source_text, a.get("pushback"), kind="article")
         if rev["unavailable"]:
             note = "The editor could not be reached, so the claims in this article were NOT checked."
