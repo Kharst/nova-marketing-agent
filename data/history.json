@@ -124,5 +124,12 @@
     "topic": "Instant 25‑year financial proposals",
     "opening": "When a client asks for a quote, the clock starts ticking. With Solar Intelligence you gene",
     "mode": "review"
+  },
+  {
+    "date": "2026-10-14",
+    "type": "conversation_starter",
+    "topic": "Installer workflow during Solar & Storage Live",
+    "opening": "We know the days leading up to a trade show can stretch your install schedule. How do you ",
+    "mode": "review"
   }
 ]
