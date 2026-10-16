@@ -138,5 +138,12 @@
     "topic": "Founder purpose and upcoming Solar & Storage Live",
     "opening": "Our founder, Reuben Siwela, created Nova Metrics to let installers focus on installing, no",
     "mode": "review"
+  },
+  {
+    "date": "2026-10-16",
+    "type": "educator",
+    "topic": "Handling hardware changes without delay",
+    "opening": "When a client’s hardware list changes after a proposal, the install timeline can grind to ",
+    "mode": "review"
   }
 ]
