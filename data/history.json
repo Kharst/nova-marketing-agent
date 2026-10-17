@@ -145,5 +145,12 @@
     "topic": "Handling hardware changes without delay",
     "opening": "When a client’s hardware list changes after a proposal, the install timeline can grind to ",
     "mode": "review"
+  },
+  {
+    "date": "2026-10-17",
+    "type": "industry_observer",
+    "topic": "Load‑shedding changes and installer workflow",
+    "opening": "Load‑shedding conditions are changing in South Africa, which may affect installer site vis",
+    "mode": "held"
   }
 ]
