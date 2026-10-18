@@ -152,5 +152,12 @@
     "topic": "Load‑shedding changes and installer workflow",
     "opening": "Load‑shedding conditions are changing in South Africa, which may affect installer site vis",
     "mode": "held"
+  },
+  {
+    "date": "2026-10-18",
+    "type": "product_demonstration",
+    "topic": "Hardware change flagging and client approval workflow",
+    "opening": "When a design tweak is needed after a proposal, Solar Intelligence flags the material hard",
+    "mode": "held"
   }
 ]
