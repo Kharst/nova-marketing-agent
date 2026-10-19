@@ -159,5 +159,12 @@
     "topic": "Hardware change flagging and client approval workflow",
     "opening": "When a design tweak is needed after a proposal, Solar Intelligence flags the material hard",
     "mode": "held"
+  },
+  {
+    "date": "2026-10-19",
+    "type": "conversation_starter",
+    "topic": "Admin bottlenecks before Solar & Storage Live",
+    "opening": "We’re heading to Solar & Storage Live Cape Town tomorrow (stand SP14). Installers, what si",
+    "mode": "review"
   }
 ]
