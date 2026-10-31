@@ -586,6 +586,24 @@ body{position:relative}
 .band .btn{margin:4px 5px 0}
 @media (max-width:720px){.grid{grid-template-columns:1fr}.art-list{padding:0 18px 72px}.tile{min-height:0;padding:26px}.toolbar input{flex-basis:100%}.band{padding:40px 22px;border-radius:26px}.article-wrap{padding:0 20px 72px}.article-wrap .page-hero{padding-top:112px}.art-hero{padding-top:116px}.article-wrap p,.article-wrap li{font-size:16.5px}}
 @media (prefers-reduced-motion:reduce){.tile,.back,.btn,.more{transition:none}.tile:hover{transform:none}}
+html{scroll-behavior:smooth}
+.article-wrap[data-accent="blue"]{--ac:#5AA9FF;--ac-hi:#9CCBFF;--ac-rgb:90,169,255}
+.article-wrap[data-accent="teal"]{--ac:#3DD6A8;--ac-hi:#8BEBCB;--ac-rgb:61,214,168}
+.article-wrap[data-accent="orange"]{--ac:#FF9F5A;--ac-hi:#FFC08F;--ac-rgb:255,159,90}
+.article-wrap[data-accent="violet"]{--ac:#A98BFF;--ac-hi:#CDBBFF;--ac-rgb:169,139,255}
+.article-wrap .lead{border-left-color:var(--ac,var(--amber))}
+.article-wrap li::before{background:var(--ac,var(--amber))}
+.article-wrap .eyebrow{color:var(--ac-hi,var(--amber-hi));background:rgba(var(--ac-rgb,212,175,55),.10);border-color:rgba(var(--ac-rgb,212,175,55),.32)}
+.article-wrap .eyebrow::before{background:var(--ac,var(--amber));box-shadow:0 0 0 3px rgba(var(--ac-rgb,212,175,55),.2)}
+.article-wrap h2{scroll-margin-top:96px}
+.article-wrap h2::after{content:'';display:block;width:44px;height:3px;border-radius:3px;margin-top:12px;background:var(--ac,var(--amber))}
+.article-wrap .toc{margin:30px 0 4px;padding:20px 24px 12px;border:1px solid var(--line-2);border-radius:18px;background:rgba(255,255,255,.03)}
+.article-wrap .toc-t{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim);margin-bottom:12px}
+.article-wrap .toc ol{margin:0;padding:0;list-style:none;counter-reset:t}
+.article-wrap .toc li{counter-increment:t;padding-left:36px;margin-bottom:10px;font-size:15.5px;line-height:1.5}
+.article-wrap .toc li::before{content:counter(t);left:0;top:0;width:24px;height:24px;display:grid;place-items:center;background:transparent;border:1px solid var(--line-2);color:var(--text-dim);font-size:12px}
+.article-wrap .toc a{color:#C3CCE0;text-decoration:none}
+.article-wrap .toc a:hover{color:var(--white)}
 """
 
 BRAND_LINK = '<link rel="stylesheet" href="/brand.css?v=1">'   # shared midnight-and-gold theme; bump v when brand.css changes
@@ -603,7 +621,7 @@ def nice_date(d):
     return f"{d.day} {d.strftime('%B %Y')}"
 
 
-NAV = [("Platform", "/products"), ("Job Portal", "/#job-portal"), ("Pricing", "/#pricing"),
+NAV = [("Platform", "/products"), ("How it works", "/#job-portal"), ("Pricing", "/#pricing"),
        ("Articles", "/articles/"), ("About", "/about"), ("Contact", "/contact")]
 
 MENU_JS = ("<script>(function(){var b=document.querySelector('.nav-hamburger'),m=document.querySelector('.mobile-menu');"
@@ -633,7 +651,7 @@ def foot():
             f'<div class="brand-text"><div class="brand-name">Nova Metrics</div></div></a>'
             f'<p class="footer-desc">Solar Intelligence: the end-to-end operations platform for South African solar installers.</p></div>'
             f'<div class="footer-col"><h5>Platform</h5><a href="/products">Solar Intelligence</a>'
-            f'<a href="/#job-portal">Job Portal</a><a href="/#pricing">Pricing</a></div>'
+            f'<a href="/#job-portal">How it works</a><a href="/#pricing">Pricing</a></div>'
             f'<div class="footer-col"><h5>Company</h5><a href="/about">About</a><a href="/faq">FAQ</a>'
             f'<a href="/articles/">Articles</a><a href="/partner-apply">Partners</a><a href="/contact">Contact</a></div>'
             f'<div class="footer-col"><h5>Contact</h5><a href="mailto:info@novametricsgroup.com">info@novametricsgroup.com</a>'
@@ -727,7 +745,7 @@ def render_article(a, date, stand):
 TAGS = {"system-sizing": ("Sizing", 0), "proposal-numbers": ("Proposals", 1), "proposal-that-sells": ("Proposals", 1),
         "compliance": ("Compliance", 2), "site-visit": ("Site visits", 3), "closing-the-job": ("Sales", 4),
         "battery-backup": ("Batteries", 0), "commercial-solar-12b": ("Commercial", 3),         "sseg-cape-town": ("Municipalities", 2), "sseg-ekurhuleni": ("Municipalities", 2)}
-COLOURS = [("#D4AF37", "212,175,55")]   # one accent: gold
+COLOURS = [("#D4AF37", "212,175,55"), ("#5AA9FF", "90,169,255"), ("#3DD6A8", "61,214,168"), ("#FF9F5A", "255,159,90"), ("#A98BFF", "169,139,255")]   # one accent: gold
 DECOR = '<div class="glow"></div><div class="read-progress" id="rp"></div>'
 PROGRESS_JS = ("<script>(function(){var b=document.getElementById('rp');if(!b)return;function f(){var h=document.documentElement,"
                "m=h.scrollHeight-h.clientHeight;b.style.width=(m>0?Math.min(100,h.scrollTop/m*100):0)+'%'}"
@@ -997,6 +1015,48 @@ STYLE_RE = re.compile(r"<style>.*?</style>", re.S)
 META_RE = re.compile(r'<div class="meta">By Nova Metrics &middot; (.*?) &middot; (\d+ min read)</div>')
 QA_RE = re.compile(r"<h3>(.*?)</h3><p>(.*?)</p>", re.S)
 MINS_RE = re.compile(r"(\d+) min read")
+
+
+CTA_RE = re.compile(r'<a class="btn btn-solid" href="[^"]*/solar-intelligence">See Solar Intelligence</a>\s*'
+                    r'<a class="btn" href="[^"]*/contact">Talk to us</a>')
+CTA_NEW = ('<a class="btn btn-solid" href="/#book-walkthrough">Book a walkthrough</a>'
+           '<a class="btn" href="/register">Start free trial</a>')
+ACCENTS = ["", "blue", "teal", "orange", "violet"]
+H2_RE = re.compile(r"<h2>(.*?)</h2>", re.S)
+CANON_RE = re.compile(r'rel="canonical" href="[^"]*/articles/([^"/]+)"')
+
+
+def accent(page):
+    """Colour the article by its topic, looked up from the article list. Gold stays the default."""
+    m = CANON_RE.search(page)
+    if not m:
+        return page
+    key = next((i.get("topic_key", "") for i in load_articles() if i["slug"] == m.group(1)), "")
+    if not key:
+        return page
+    name = ACCENTS[TAGS.get(key, ("Insights", 1))[1] % len(ACCENTS)]
+    return re.sub(r'<article class="article-wrap"[^>]*>',
+                  '<article class="article-wrap"' + (f' data-accent="{name}"' if name else "") + ">",
+                  page, count=1)
+
+
+def add_toc(page):
+    """An 'In this article' box with jump links, built from the section headings. Safe to run again."""
+    if 'class="toc"' in page or '<p class="lead">' not in page:
+        return page
+    items = []
+
+    def number(m):
+        n = len(items) + 1
+        items.append((n, re.sub(r"<[^>]+>", "", m.group(1)).strip()))
+        return f'<h2 id="s{n}">{m.group(1)}</h2>'
+
+    page = H2_RE.sub(number, page)
+    if len(items) < 3:
+        return page
+    links = "".join(f'<li><a href="#s{n}">{t}</a></li>' for n, t in items)
+    box = f'<nav class="toc" aria-label="In this article"><div class="toc-t">In this article</div><ol>{links}</ol></nav>'
+    return re.sub(r'(<p class="lead">.*?</p>)', lambda m: m.group(1) + box, page, count=1, flags=re.S)
 
 
 def refresh_chrome(page):
