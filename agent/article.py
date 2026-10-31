@@ -46,6 +46,12 @@ TOPICS = [
      "angle": "How to explain the numbers in a solar proposal so clients trust them: production, "
               "savings, tariff escalation and payback",
      "sources": ["resources/solar-intelligence-guide.html"]},
+    {"key": "sseg-cape-town",
+     "angle": "What solar installers need for a City of Cape Town SSEG application: the steps from permission to install to the commissioning approval letter",
+     "sources": ["agent/sources/cape-town-sseg.md"]},
+    {"key": "sseg-ekurhuleni",
+     "angle": "What solar installers need for a City of Ekurhuleni SSEG application: the documents, the safety labels and the meter",
+     "sources": ["agent/sources/ekurhuleni-sseg.md"]},
     {"key": "proposal-that-sells",
      "angle": "What a solar proposal needs so the client can say yes the same week",
      "sources": ["resources/proposal-guide.html"]},
@@ -720,7 +726,7 @@ def render_article(a, date, stand):
 
 TAGS = {"system-sizing": ("Sizing", 0), "proposal-numbers": ("Proposals", 1), "proposal-that-sells": ("Proposals", 1),
         "compliance": ("Compliance", 2), "site-visit": ("Site visits", 3), "closing-the-job": ("Sales", 4),
-        "battery-backup": ("Batteries", 0), "commercial-solar-12b": ("Commercial", 3)}
+        "battery-backup": ("Batteries", 0), "commercial-solar-12b": ("Commercial", 3),         "sseg-cape-town": ("Municipalities", 2), "sseg-ekurhuleni": ("Municipalities", 2)}
 COLOURS = [("#D4AF37", "212,175,55")]   # one accent: gold
 DECOR = '<div class="glow"></div><div class="read-progress" id="rp"></div>'
 PROGRESS_JS = ("<script>(function(){var b=document.getElementById('rp');if(!b)return;function f(){var h=document.documentElement,"
@@ -848,7 +854,10 @@ def build_context(topic, items):
     if topic:
         ctx["article_angle"] = topic["angle"]
         for path in topic["sources"]:
-            t = clean_source(strip_html(read_site_file(path)))
+            if path.startswith("agent/sources/"):
+                t = clean_source((ROOT / path).read_text())
+            else:
+                t = clean_source(strip_html(read_site_file(path)))
             ctx.setdefault("source_material", {})[path] = t
             texts.append(t)
     else:
