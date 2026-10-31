@@ -18,5 +18,13 @@
     "status": "published",
     "published": "2026-10-13T20:35+02:00",
     "mins": 4
+  },
+  {
+    "slug": "cape-town-sseg-application-steps",
+    "title": "City of Cape Town SSEG application",
+    "excerpt": "Step‑by‑step guidance for installers handling City of Cape Town SSEG applications, covering signatures, inverter lists, export choices, permission letters and commissioning…",
+    "date": "2026-10-31",
+    "topic_key": "sseg-cape-town",
+    "status": "queued"
   }
 ]
