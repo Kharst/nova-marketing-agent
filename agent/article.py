@@ -600,8 +600,8 @@ html{scroll-behavior:smooth}
 .article-wrap .toc{margin:30px 0 4px;padding:20px 24px 12px;border:1px solid var(--line-2);border-radius:18px;background:rgba(255,255,255,.03)}
 .article-wrap .toc-t{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim);margin-bottom:12px}
 .article-wrap .toc ol{margin:0;padding:0;list-style:none;counter-reset:t}
-.article-wrap .toc li{counter-increment:t;padding-left:36px;margin-bottom:10px;font-size:15.5px;line-height:1.5}
-.article-wrap .toc li::before{content:counter(t);left:0;top:0;width:24px;height:24px;display:grid;place-items:center;background:transparent;border:1px solid var(--line-2);color:var(--text-dim);font-size:12px}
+.article-wrap .toc li{padding-left:0;margin-bottom:10px;font-size:15.5px;line-height:1.5}
+.article-wrap .toc li::before{display:none}
 .article-wrap .toc a{color:#C3CCE0;text-decoration:none}
 .article-wrap .toc a:hover{color:var(--white)}
 """
