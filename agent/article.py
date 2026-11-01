@@ -1060,6 +1060,14 @@ def add_toc(page):
 
 
 def refresh_chrome(page):
+    """Current look, plus the booking button, topic colour and contents box."""
+    page = refresh_base(page)
+    page = CTA_RE.sub(CTA_NEW, page)
+    page = accent(page)
+    return add_toc(page)
+
+
+def refresh_base(page):
     """Give an already-written article the current header, footer and look, keeping its text exactly as it is.
     Safe to run again and again."""
     page = modernise(page)
