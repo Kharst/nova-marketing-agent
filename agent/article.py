@@ -604,6 +604,16 @@ html{scroll-behavior:smooth}
 .article-wrap .toc li::before{display:none}
 .article-wrap .toc a{color:#C3CCE0;text-decoration:none}
 .article-wrap .toc a:hover{color:var(--white)}
+.article-wrap .glance{margin:30px 0 4px;padding:22px 24px 8px;border:1px solid var(--line-2);border-radius:18px;background:linear-gradient(160deg,var(--panel-2),var(--panel))}
+.article-wrap .gl-row{display:flex;flex-direction:column}
+.article-wrap .gl-step{position:relative;display:grid;grid-template-columns:34px 1fr;column-gap:16px;padding:0 0 20px;text-decoration:none}
+.article-wrap .gl-step::after{content:'';position:absolute;left:16px;top:38px;bottom:4px;width:2px;background:linear-gradient(var(--ac,var(--amber)),rgba(var(--ac-rgb,212,175,55),.12))}
+.article-wrap .gl-step:last-child::after{display:none}
+.article-wrap .gl-n{grid-row:1/3;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:600;font-size:14px;color:var(--ac-hi,var(--amber-hi));background:rgba(var(--ac-rgb,212,175,55),.12);border:1.5px solid var(--ac,var(--amber))}
+.article-wrap .gl-t{color:var(--white);font-weight:600;font-size:16.5px;line-height:1.35;padding-top:5px}
+.article-wrap .gl-p{color:var(--text-dim);font-size:14.5px;line-height:1.55;margin-top:3px}
+.article-wrap .gl-step:hover .gl-t{color:var(--ac-hi,var(--amber-hi))}
+.article-wrap .gl-faq{display:inline-block;margin:0 0 16px;font-size:13px;color:var(--text-dim);text-decoration:none;border:1px solid var(--line-2);border-radius:999px;padding:6px 14px}
 """
 
 BRAND_LINK = '<link rel="stylesheet" href="/brand.css?v=1">'   # shared midnight-and-gold theme; bump v when brand.css changes
@@ -1059,12 +1069,49 @@ def add_toc(page):
     return re.sub(r'(<p class="lead">.*?</p>)', lambda m: m.group(1) + box, page, count=1, flags=re.S)
 
 
+TOC_RE = re.compile(r'<nav class="toc".*?</nav>', re.S)
+
+
+def add_glance(page):
+    """A diagram in place of the contents box: one numbered step per section with its first key point.
+    It only re-presents the article's own text, so it never adds a claim. Safe to run again."""
+    if 'class="glance"' in page:
+        return page
+    steps = []
+    for part in re.split(r'(?=<h2 id="s\d+">)', page)[1:]:
+        m = re.match(r'<h2 id="(s\d+)">(.*?)</h2>', part, re.S)
+        if not m:
+            continue
+        raw = re.sub(r"<[^>]+>", "", m.group(2)).strip()
+        if raw.lower() == "common questions":
+            continue
+        li = re.search(r"<li>(.*?)</li>", part.split("</article>")[0], re.S)
+        point = re.sub(r"<[^>]+>", "", li.group(1)).strip() if li else ""
+        steps.append((m.group(1), raw, point))
+    if len(steps) < 3:
+        return page
+    process = all(re.match(r"\d+\.", s[1]) for s in steps)
+    label = "The process at a glance" if process else "Key points at a glance"
+    cleaned = [(sid, re.sub(r"^\d+\.\s*", "", raw), point) for sid, raw, point in steps]
+    rows = "".join(
+        f'<a class="gl-step" href="#{sid}"><span class="gl-n">{n}</span><span class="gl-t">{title}</span>'
+        + (f'<span class="gl-p">{point}</span>' if point else "") + "</a>"
+        for n, (sid, title, point) in enumerate(cleaned, 1))
+    faq = re.search(r'<h2 id="(s\d+)">Common questions</h2>', page)
+    tail = f'<a class="gl-faq" href="#{faq.group(1)}">Common questions &darr;</a>' if faq else ""
+    box = (f'<nav class="glance" aria-label="{label}"><div class="toc-t">{label}</div>'
+           f'<div class="gl-row">{rows}</div>{tail}</nav>')
+    if 'class="toc"' in page:
+        return TOC_RE.sub(lambda m: box, page, count=1)
+    return re.sub(r'(<p class="lead">.*?</p>)', lambda m: m.group(1) + box, page, count=1, flags=re.S)
+
+
 def refresh_chrome(page):
     """Current look, plus the booking button, topic colour and contents box."""
     page = refresh_base(page)
     page = CTA_RE.sub(CTA_NEW, page)
     page = accent(page)
-    return add_toc(page)
+    page = add_toc(page)     return add_glance(page)
 
 
 def refresh_base(page):
