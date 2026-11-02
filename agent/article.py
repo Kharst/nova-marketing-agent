@@ -1111,7 +1111,7 @@ def refresh_chrome(page):
     page = refresh_base(page)
     page = CTA_RE.sub(CTA_NEW, page)
     page = accent(page)
-    page = add_toc(page)     return add_glance(page)
+    return add_glance(add_toc(page)) #     return add_glance(page)
 
 
 def refresh_base(page):
