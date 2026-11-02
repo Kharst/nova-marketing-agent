@@ -28,5 +28,13 @@
     "status": "published",
     "published": "2026-11-01T11:13+02:00",
     "mins": 3
+  },
+  {
+    "slug": "city-of-ekurhuleni-sseg-application-guide",
+    "title": "City of Ekurhuleni SSEG application",
+    "excerpt": "Learn exactly which forms, certificates and safety labels the City of Ekurhuleni expects for a small‑scale embedded generation (SSEG) application and how to meet the…",
+    "date": "2026-11-02",
+    "topic_key": "sseg-ekurhuleni",
+    "status": "queued"
   }
 ]
