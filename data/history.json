@@ -257,5 +257,12 @@
     "topic": "Tariff changes and installer workflow",
     "opening": "Solar Intelligence provides information on how tariff changes can impact solar projects. I",
     "mode": "held"
+  },
+  {
+    "date": "2026-11-03",
+    "type": "product_demonstration",
+    "topic": "Instant client approval for on‑site changes",
+    "opening": "When a site visit reveals a material change, installers often scramble to get client sign‑",
+    "mode": "review"
   }
 ]
