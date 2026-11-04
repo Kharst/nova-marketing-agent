@@ -264,5 +264,12 @@
     "topic": "Instant client approval for on‑site changes",
     "opening": "When a site visit reveals a material change, installers often scramble to get client sign‑",
     "mode": "review"
+  },
+  {
+    "date": "2026-11-04",
+    "type": "conversation_starter",
+    "topic": "How do you handle on‑site design changes?",
+    "opening": "When a site visit shows a material change, Solar Intelligence flags the change, works out ",
+    "mode": "review"
   }
 ]
