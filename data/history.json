@@ -285,5 +285,12 @@
     "topic": "Keeping momentum after a proposal is accepted",
     "opening": "Solar Intelligence records the acceptance of a proposal and moves the job into the install",
     "mode": "review"
+  },
+  {
+    "date": "2026-11-08",
+    "type": "industry_observer",
+    "topic": "Complex SSEG registration slows installers",
+    "opening": "Many installers spend significant time on paperwork. Installers may need to submit documen",
+    "mode": "held"
   }
 ]
