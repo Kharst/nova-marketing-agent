@@ -313,5 +313,12 @@
     "topic": "Reuben Siwela’s drive to simplify installer admin",
     "opening": "Our founder, Reuben Siwela, built Nova Metrics because helping others is in his DNA. He sa",
     "mode": "review"
+  },
+  {
+    "date": "2026-11-13",
+    "type": "educator",
+    "topic": "Capturing client data once to avoid re‑entry",
+    "opening": "When you capture a client’s details for a quote, the same information often resurfaces at ",
+    "mode": "review"
   }
 ]
