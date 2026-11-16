@@ -334,5 +334,12 @@
     "topic": "Fast, branded proposals with 25‑year financial outlook",
     "opening": "When a client asks for a quote, time is precious. Solar Intelligence captures the client’s",
     "mode": "review"
+  },
+  {
+    "date": "2026-11-16",
+    "type": "conversation_starter",
+    "topic": "Tracking proposal engagement",
+    "opening": "We see many installers wonder how to know which proposals are actually being read. Solar I",
+    "mode": "review"
   }
 ]
